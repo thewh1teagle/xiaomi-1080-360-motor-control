@@ -2,6 +2,7 @@
 Provides a way controlling the motor directly on the MJSXJ02CM camera.
 
 for getting shell on your camera you need first install the mods from this repo https://github.com/telmomarques/xiaomi-360-1080p-hacks
+
 if you want to use your own libs you can get it from the camera
 before you compile it you need to install armhf cross compiler, instructions here : https://www.acmesystems.it/arm9_toolchain
 
