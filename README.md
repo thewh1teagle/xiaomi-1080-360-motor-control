@@ -1,16 +1,31 @@
 # xiaomi-1080-360-motor-control
-Provides a way controlling the motor directly on the MJSXJ02CM camera.
 
-# Getting started
+Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://www.mi.com/global/camera-360).
 
-for getting shell on your camera you need first install the mods from this repo https://github.com/telmomarques/xiaomi-360-1080p-hacks
+## Getting started
 
-if you want to use your own libs you can get it from the camera.
+1. Is it the same as mine?
 
-before you compile it you need to install armhf cross compiler, instructions here : https://www.acmesystems.it/arm9_toolchain
+[![MJSXJ02CM camera](https://i.imgur.com/3fOE6ZR.png)](https://www.mi.com/global/camera-360)
 
-for compile :
+1. Get a shell
+
+Install these mods to get a shell from within your camera:  
+https://github.com/telmomarques/xiaomi-360-1080p-hacks
+
+1. Install the toolchain
+
+```shell
+ sudo apt-get install gcc-arm-linux-gnueabihf libc6-armhf-cross libc6-dev-armhf-cross binutils-arm-linux-gnueabi
+```
+
+1. Bring your own libs (optional)
+
+If you want to use your own libs, you can get it from the camera using [`pull_libs.sh`](./pull_libs.sh). 
+
+1. Kitchen is ready
+
+```shell
 make
+```
 
-
-![camera](https://chinacoupon.info/wp-content/uploads/thumbs_dir/XIAOMI-Mijia-C90655-1080P-PT-360%C2%B0-IP-Camera-oc7l7x1zxxhttrwyf6ka4hdar6fn1p8ew5zwo3wya0.jpg)
