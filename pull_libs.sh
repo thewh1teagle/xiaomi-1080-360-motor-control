@@ -1,13 +1,20 @@
-#!/bin/bash
+#!/bin/sh
 
-if [ "$1" == "" ] || [ "$2" == "" ] || [ "$3" == "" ] 
-then
-    echo "Usage: ./pull_libs <IP> <FTP USER> <PASS>"
+set -e
+
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] ; then
+    echo "Usage: $0 <HOST> <USERNAME> <PASSWORD>"
+    echo
+    echo "Pull libraries from remote camera over FTP."
     exit 1
 fi
 
-IP=$1 USER=$2 PASS=$3
+HOST="$1" USERNAME="$2" PASSWORD="$3"
 
+
+curl -u "$USERNAME:$PASSWORD" "ftp://$HOST/mnt/sdcard/bin/file' -o file
+
+echo "finished!"
 
 
 declare -a StringArray=("libdevice_kit.so.0.0.1" "libmortox.so.0.0.0" "libboardav.so.1.0.0" "libmortox_share.so.0.0.0" "libmiio_util.so.0.0.1" "libmortoxev.so.0.0.0" "libmi_isp.so" "libMTE_LINUX.so" )
