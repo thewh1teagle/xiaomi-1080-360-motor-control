@@ -24,7 +24,7 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 If you want to use your own libs, you can get it from the camera using [`pull_libs`](./pull_libs). 
 
 
-5.
+5. clonning from master branch (stable)
 ```git clone
  git clone -b master https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
 ```
