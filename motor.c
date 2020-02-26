@@ -3,7 +3,7 @@
 #include <inttypes.h>
 
 #define FORWARD 0
-#define BACKWARD 1
+#define REVERSE 1
 #define PAN 0
 #define TILT 1
 #define MAX_LEFT 66
@@ -34,9 +34,9 @@ int motor_move(int motor, int direction, int steps) {
 }
 
 int motor_left(int steps) { return motor_move(PAN, FORWARD, steps); }
-int motor_right(int steps) { return motor_move(PAN, BACKWARD, steps); }
+int motor_right(int steps) { return motor_move(PAN, REVERSE, steps); }
 int motor_up(int steps) { return motor_move(TILT, FORWARD, steps); }
-int motor_down(int steps) { return motor_move(TILT, BACKWARD, steps); }
+int motor_down(int steps) { return motor_move(TILT, REVERSE, steps); }
 
 int main() {
     int up_p, down_p, left_p, right_p = 0; // motor position
