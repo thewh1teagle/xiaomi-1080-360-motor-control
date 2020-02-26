@@ -3,7 +3,7 @@ NAME=motor
 CC=arm-linux-gnueabihf-gcc
 SRCS=$(wildcard *.c)
 CFLAGS += -Wall -Wextra
-LDFLAGS += -L lib/ $(addprefix -l:,$(wildcard lib/*))
+LDFLAGS += -L . $(addprefix -l:,$(wildcard lib/*))
 
 all: $(NAME)
 
