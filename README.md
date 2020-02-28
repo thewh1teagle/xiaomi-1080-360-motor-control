@@ -16,8 +16,9 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 3. Install the toolchain
 
 ```shell
- # sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabi
- # curl https://sh.rustup.rs -sSf | sh
+ $ sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabi
+ $ curl https://sh.rustup.rs -sSf | sh
+ $ rustup install stable
 ```
 
 4. Clone the repository
