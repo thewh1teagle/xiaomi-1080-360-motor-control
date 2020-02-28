@@ -2,7 +2,7 @@
 
 Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://www.mi.com/global/camera-360).
 
-## Getting started
+## Developement
 
 1. Is it the same as mine?
 
@@ -16,20 +16,14 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 3. Install the toolchain
 
 ```shell
- sudo apt-get install gcc-arm-linux-gnueabihf libc6-armhf-cross libc6-dev-armhf-cross binutils-arm-linux-gnueabi
+ # sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabi
+ # curl https://sh.rustup.rs -sSf | sh
 ```
 
-4. Bring your own libs (optional)
-
-If you want to use your own libs, you can get it from the camera using [`pull_libs`](./pull_libs). 
-
-
-5. clonning from master branch (stable)
-```git clone
- git clone -b master https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
+4. Clone the repository
 ```
-
-
+ $ git clone https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
+```
 
 6. Kitchen is ready
 
@@ -37,3 +31,21 @@ If you want to use your own libs, you can get it from the camera using [`pull_li
 make
 ```
 
+```
+make run -- pan 1 10
+# or
+./control-debug ./mocks/libdevice_kit.so pan 1 10
+```
+
+
+## Usage
+
+```
+ $ make release
+```
+
+On ARMv7 device:
+
+```
+ $ ./control /path/to/libdevice_kit.so {pan, tilt} direction steps
+```
