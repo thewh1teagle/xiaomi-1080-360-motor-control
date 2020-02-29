@@ -59,7 +59,7 @@ run: run-debug
 .PHONY: clean
 clean: clean-mocks
 	@rm -vf $(RELEASE_NAME)
-	@rm -vf $(RELEASE_NAME)
+	@rm -vf $(DEBUG_NAME)
 	@rm -rf target/
 
 .PHONY: re
