@@ -1,10 +1,10 @@
 # xiaomi-1080-360-motor-control
 
-Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://www.mi.com/global/camera-360).
-
 ## Developement
 
-1. Is it the same as mine?
+1. Is this compatible with my camera?
+
+This controller works with the [MJSXJ02CM camera](https://www.mi.com/global/camera-360):
 
 [![MJSXJ02CM camera](https://i.imgur.com/3fOE6ZR.png)](https://www.mi.com/global/camera-360)
 
@@ -26,7 +26,7 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
  $ git clone https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
 ```
 
-6. Kitchen is ready
+5. Kitchen is ready
 
 ```shell
 make
