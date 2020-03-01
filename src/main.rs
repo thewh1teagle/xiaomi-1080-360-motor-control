@@ -94,7 +94,7 @@ extern crate rouille;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
-use clap::{App, Arg, SubCommand, AppSettings};
+use clap::{App, AppSettings, Arg, SubCommand};
 
 fn main() {
     let matches = App::new("control")
