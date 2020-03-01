@@ -33,12 +33,12 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 ```
 
 ```shell
-make run -- motor move pan forward 10
+make run -- ptz move pan forward 10
 ```
 
 ```shell
 export MIJIA_LIB_PATH=$(pwd)/mocks
-./control-debug motor move pan forward 10
+./control-debug ptz move pan forward 10
 ```
 
 6. Build release binary
@@ -51,8 +51,8 @@ make release
 
 ```shell
 export MIJIA_LIB_PATH=/mnt/data/lib
-./control motor move pan forward 10
-./control motor stop
+./control ptz move pan forward 10
+./control ptz stop
 ./control server --listen 0.0.0.0:8888
 curl http://0.0.0.0:8888/ptz/move/pan/forward/10
 ```
