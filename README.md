@@ -53,5 +53,6 @@ make release
 export MIJIA_LIB_PATH=/mnt/data/lib/libdevice_kit.so
 ./control motor move pan forward 10
 ./control motor stop
-./control server --listen 0.0.0.0:8080
+./control server --listen 0.0.0.0:8888
+curl http://0.0.0.0:8888/ptz/move/pan/forward/10
 ```

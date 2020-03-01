@@ -107,7 +107,7 @@ fn main() {
                 .long("library-path")
                 .value_name("PATH")
                 .help("Set path to the camera libraries")
-                .env("LIBRARY_PATH")
+                .env("MIJIA_LIB_PATH")
                 .default_value("./mocks/libdevice_kit.so")
         )
         .arg(
