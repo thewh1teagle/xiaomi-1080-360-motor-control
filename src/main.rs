@@ -27,7 +27,7 @@ extern crate strum_macros;
 #[derive(EnumString, Display)]
 pub enum Direction {
     #[strum(serialize = "forward")]
-    Forward,
+    Forward = 0,
     #[strum(serialize = "reverse")]
     Reverse,
 }
@@ -46,20 +46,14 @@ impl Motor {
     }
 
     pub fn pan(&mut self, dir: Direction, steps: i32) {
-        match dir {
-            Direction::Forward => unsafe { self.api.motor_h_dir_set(0) },
-            Direction::Reverse => unsafe { self.api.motor_h_dir_set(1) },
-        }
-        unsafe { self.api.motor_h_position_get() }
+        unsafe { self.api.motor_h_dir_set(dir as i32) }
+        // unsafe { self.api.motor_h_position_get() }
         unsafe { self.api.motor_h_dist_set(steps) }
         unsafe { self.api.motor_h_move() }
     }
 
     pub fn tilt(&mut self, dir: Direction, steps: i32) {
-        match dir {
-            Direction::Forward => unsafe { self.api.motor_v_dir_set(0) },
-            Direction::Reverse => unsafe { self.api.motor_v_dir_set(1) },
-        }
+        unsafe { self.api.motor_v_dir_set(dir as i32) }
         unsafe { self.api.motor_v_position_get() }
         unsafe { self.api.motor_v_dist_set(steps) }
         unsafe { self.api.motor_v_move() }
