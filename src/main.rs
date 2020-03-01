@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate dlopen_derive;
 extern crate dlopen;
-
 use dlopen::wrapper::{Container, WrapperApi};
 
 #[derive(WrapperApi)]
@@ -23,14 +22,22 @@ struct MotorApi {
 extern crate strum;
 #[macro_use]
 extern crate strum_macros;
+use std::str::FromStr;
+use strum::VariantNames;
 
-#[derive(EnumString, Display)]
+#[derive(EnumString, EnumVariantNames, PartialEq, Debug)]
+#[strum(serialize_all = "kebab_case")]
+pub enum Action {
+    Pan,
+    Tilt,
+}
+#[derive(EnumString, EnumVariantNames, PartialEq, Debug)]
+#[strum(serialize_all = "kebab_case")]
 pub enum Direction {
-    #[strum(serialize = "forward")]
-    Forward = 0,
-    #[strum(serialize = "reverse")]
+    Forward,
     Reverse,
 }
+type StepCount = u8;
 
 pub struct Motor {
     api: Container<MotorApi>,
@@ -40,23 +47,34 @@ impl Motor {
     pub fn new(library: &str) -> Motor {
         let api: Container<MotorApi> =
             unsafe { Container::load(library) }.expect("Could not open library or load symbols");
-
-        unsafe { api.motor_init() }
         Motor { api: api }
     }
 
-    pub fn pan(&mut self, dir: Direction, steps: i32) {
+    pub fn init(&mut self) {
+        unsafe { self.api.motor_init() }
+    }
+
+    pub fn pan(&mut self, dir: Direction, steps: StepCount) {
         unsafe { self.api.motor_h_dir_set(dir as i32) }
         // unsafe { self.api.motor_h_position_get() }
-        unsafe { self.api.motor_h_dist_set(steps) }
+        unsafe { self.api.motor_h_dist_set(steps as i32) }
         unsafe { self.api.motor_h_move() }
     }
 
-    pub fn tilt(&mut self, dir: Direction, steps: i32) {
+    pub fn tilt(&mut self, dir: Direction, steps: StepCount) {
         unsafe { self.api.motor_v_dir_set(dir as i32) }
-        unsafe { self.api.motor_v_position_get() }
-        unsafe { self.api.motor_v_dist_set(steps) }
+        // unsafe { self.api.motor_v_position_get() }
+        unsafe { self.api.motor_v_dist_set(steps as i32) }
         unsafe { self.api.motor_v_move() }
+    }
+
+    pub fn move_(&mut self, action: Action, dir: Direction, steps: StepCount) {
+        self.init();
+        match action {
+            Action::Pan => self.pan(dir, steps),
+            Action::Tilt => self.tilt(dir, steps),
+        }
+        self.stop();
     }
 
     pub fn stop(&mut self) {
@@ -64,15 +82,6 @@ impl Motor {
         unsafe { self.api.motor_v_stop() }
     }
 }
-
-// fn movee(motor: &mut Motor, action: String, dir: Direction, steps: i32) {
-//     println!("move: {} {} {}", action, dir, steps);
-//     match action.as_ref() {
-//         "pan" => motor.pan(dir, steps),
-//         "tilt" => motor.tilt(dir, steps),
-//         _ => println!("Test"),
-//     }
-// }
 
 // #[macro_use]
 // extern crate rouille;
@@ -114,28 +123,33 @@ fn main() {
                 .help("Sets the level of verbosity"),
         )
         .subcommand(
-            SubCommand::with_name("move")
-                .about("move using cli")
-                .arg(
-                    Arg::with_name("action")
-                        .possible_values(&["pan", "tilt"])
-                        .help("which motor to activate")
-                        .index(1)
-                        .required(true),
+            App::new("motor")
+                .about("motor controllers")
+                .subcommand(
+                    App::new("move")
+                        .about("move using cli")
+                        .arg(
+                            Arg::with_name("action")
+                                .possible_values(&Action::VARIANTS)
+                                .help("which motor to activate")
+                                .index(1)
+                                .required(true),
+                        )
+                        .arg(
+                            Arg::with_name("direction")
+                                .possible_values(&Direction::VARIANTS)
+                                .help("which direction to activate")
+                                .index(2)
+                                .required(true),
+                        )
+                        .arg(
+                            Arg::with_name("steps")
+                                .help("which motor to activate")
+                                .index(3)
+                                .required(true),
+                        ),
                 )
-                .arg(
-                    Arg::with_name("direction")
-                        .possible_values(&["forward", "reverse"])
-                        .help("which direction to activate")
-                        .index(2)
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("steps")
-                        .help("which motor to activate")
-                        .index(3)
-                        .required(true),
-                ),
+                .subcommand(SubCommand::with_name("stop").about("stop the move")),
         )
         .subcommand(
             SubCommand::with_name("server")
@@ -152,33 +166,29 @@ fn main() {
 
     let mut motor = Motor::new(matches.value_of("library-path").unwrap());
 
-    match matches.subcommand_name() {
-        Some("move") => movee(
-            &mut motor,
-            matches
-                .subcommand_matches("move")
-                .unwrap()
-                .value_of("action")
-                .unwrap()
-                .to_string(),
-            matches
-                .subcommand_matches("move")
-                .unwrap()
-                .value_of("direction")
-                .unwrap()
-                .parse::<Direction>()
-                .unwrap(),
-            matches
-                .subcommand_matches("move")
-                .unwrap()
-                .value_of("steps")
-                .unwrap()
-                .parse::<i32>()
-                .unwrap(),
-        ),
-        Some("server") => {
+    match matches.subcommand() {
+        ("motor", Some(matches)) => match matches.subcommand() {
+            ("stop", Some(_)) => {
+                motor.stop();
+            }
+            ("move", Some(matches)) => {
+                motor.init();
+                motor.move_(
+                    Action::from_str(matches.value_of("action").unwrap()).unwrap(),
+                    Direction::from_str(matches.value_of("direction").unwrap()).unwrap(),
+                    matches
+                        .value_of("steps")
+                        .unwrap()
+                        .parse::<StepCount>()
+                        .unwrap(),
+                );
+                // motor.stop();
+            }
+            _ => unreachable!(),
+        },
+        ("server", Some(_matches)) => {
             println!("Not implemented.")
-            //     serve(
+            //     motor.stop(
             //     &mut motor,
             //     matches
             //         .subcommand_matches("server")
@@ -189,9 +199,6 @@ fn main() {
             //         .unwrap(),
             // )
         }
-        None => println!("No subcommand was used"),
-        _ => println!("Some other subcommand was used"),
+        _ => unreachable!(),
     }
-
-    motor.stop();
 }
