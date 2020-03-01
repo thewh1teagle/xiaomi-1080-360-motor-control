@@ -98,12 +98,12 @@ extern crate rouille;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand, crate_version};
 
 fn main() {
     let matches = App::new("control")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .version("1.0")
+        .version(crate_version!())
         .arg(
             Arg::with_name("library-path")
                 .short("L")

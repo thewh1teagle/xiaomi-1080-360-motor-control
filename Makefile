@@ -41,6 +41,12 @@ $(DEBUG_NAME): setup-debug
 	RUSTFLAGS="-C linker=$(DEBUG_CC)" cargo build --target=$(DEBUG_TARGET)
 	cp target/$(DEBUG_TARGET)/debug/$(NAME) $(DEBUG_NAME)
 
+.PHONY: release
+release: $(RELEASE_NAME)
+
+.PHONY: debug
+debug: $(DEBUG_NAME)
+
 .PHONY: run-release
 run-release: $(RELEASE_NAME) mocks
 	@echo -e "##################################################"
