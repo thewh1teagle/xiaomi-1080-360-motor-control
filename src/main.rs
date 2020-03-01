@@ -3,6 +3,9 @@ extern crate dlopen_derive;
 extern crate dlopen;
 use dlopen::wrapper::{Container, WrapperApi};
 
+const DEFAULT_LIBRARY_PATH: &str = "./mocks";
+const DEFAULT_HOST_PORT: &str = "0.0.0.0:8888";
+
 // TODO: Ensure we stay in the field
 const _MAX_LEFT: u8 = 66;
 const _MAX_RIGHT: u8 = 66;
@@ -108,7 +111,7 @@ fn main() {
                 .value_name("PATH")
                 .help("Set path to the camera libraries")
                 .env("MIJIA_LIB_PATH")
-                .default_value("./mocks"),
+                .default_value(DEFAULT_LIBRARY_PATH),
         )
         .arg(
             Arg::with_name("v")
@@ -144,9 +147,9 @@ fn main() {
                 .arg(Arg::with_name("host").short("h").help("set target host"))
                 .arg(
                     Arg::with_name("listen")
-                        .default_value("127.0.0.1:8888")
+                        .default_value(DEFAULT_HOST_PORT)
                         .short("p")
-                        .help("set target port"),
+                        .help("set target host:port"),
                 ),
         )
         .get_matches();
