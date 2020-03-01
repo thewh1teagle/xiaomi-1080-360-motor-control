@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "device_kit.h"
 
 void motor_init() { printf("motor_init()\n"); }
 void motor_h_dir_set(int dir) { printf("motor_h_dir_set(dir=%d)\n", dir); }

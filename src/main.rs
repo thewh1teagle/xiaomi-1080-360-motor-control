@@ -94,10 +94,11 @@ extern crate rouille;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, SubCommand, AppSettings};
 
 fn main() {
     let matches = App::new("control")
+        .setting(AppSettings::SubcommandRequiredElseHelp)
         .version("1.0")
         .arg(
             Arg::with_name("library-path")
@@ -116,6 +117,7 @@ fn main() {
         )
         .subcommand(
             App::new("ptz")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .about("ptz service")
                 .subcommand(
                     App::new("move")
@@ -166,31 +168,31 @@ fn main() {
                         .unwrap(),
                 );
             }
-            _ => println!("{}", matches.usage()),
+            _ => unreachable!(),
         },
         ("server", Some(matches)) => {
             let addrs: Vec<_> = matches
                 .value_of("listen")
                 .unwrap()
                 .to_socket_addrs()
-                .expect("Unable to parse socket address")
+                .expect("error: unable to parse socket address")
                 .collect();
             let addr: SocketAddr = *addrs.first().unwrap();
 
-            println!("listening on {}", addr);
+            println!("server: listening on {}", addr);
 
             rouille::start_server(addr, move |request| {
                 router!(request,
                     (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
                         // TODO: Reimplement
                         // motor.move_(action, dir, steps);
-                        println!("called /ptz/move/{}/{}/{}", action, dir, steps);
-                        rouille::Response::text(format!("{{}}"))
+                        println!("server: ptz move action={} dir={} steps={}", action, dir, steps);
+                        rouille::Response::text("not_implemented")
                     },
                     _ => rouille::Response::empty_404()
                 )
             });
         }
-        _ => println!("{}", matches.usage()),
+        _ => unreachable!(),
     }
 }
