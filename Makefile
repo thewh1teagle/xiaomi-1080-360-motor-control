@@ -44,13 +44,13 @@ $(DEBUG_NAME): setup-debug
 .PHONY: run-release
 run-release: $(RELEASE_NAME) mocks
 	@echo -e "##################################################"
-	./$(RELEASE_NAME) /mnt/data/lib/libdevice_kit.so $(RUN_ARGS)
+	LIBRARY_PATH=/mnt/data/lib/libdevice_kit.so ./$(RELEASE_NAME) $(RUN_ARGS)
 	@echo -e "##################################################"
 
 .PHONY: run-debug
 run-debug: $(DEBUG_NAME) mocks
 	@echo -e "##################################################"
-	./$(DEBUG_NAME) ./mocks/libdevice_kit.so $(RUN_ARGS)
+	LIBRARY_PATH=./mocks/libdevice_kit.so ./$(DEBUG_NAME) $(RUN_ARGS)
 	@echo -e "##################################################"
 
 .PHONY: run

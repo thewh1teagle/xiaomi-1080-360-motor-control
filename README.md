@@ -29,24 +29,29 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 5. Kitchen is ready
 
 ```shell
-make
+ $ make
 ```
 
-```
-make run -- pan 1 10
-# or
-./control-debug ./mocks/libdevice_kit.so pan 1 10
+```shell
+make run -- motor move pan forward 10
 ```
 
+```shell
+export MIJIA_LIB_PATH=$(pwd)/mocks
+./control-debug motor move pan forward 10
+```
+
+6. Build release binary
+
+```shell
+make release
+```
 
 ## Usage
 
-```
- $ make release
-```
-
-On ARMv7 device:
-
-```
- $ ./control /path/to/libdevice_kit.so {pan, tilt} direction steps
+```shell
+export MIJIA_LIB_PATH=/mnt/data/lib/libdevice_kit.so
+./control motor move pan forward 10
+./control motor stop
+./control server --listen 0.0.0.0:8080
 ```

@@ -3,8 +3,15 @@ extern crate dlopen_derive;
 extern crate dlopen;
 use dlopen::wrapper::{Container, WrapperApi};
 
+// TODO: Ensure we stay in the field
+const _MAX_LEFT: u8 = 66;
+const _MAX_RIGHT: u8 = 66;
+const _MAX_DOWN: u8 = 13;
+const _MAX_UP: u8 = 20;
+
+
 #[derive(WrapperApi)]
-struct MotorApi {
+struct PTZApi {
     motor_init: unsafe extern "C" fn(),
     motor_h_dir_set: unsafe extern "C" fn(dir: i32),
     motor_v_dir_set: unsafe extern "C" fn(dir: i32),
@@ -25,13 +32,13 @@ extern crate strum_macros;
 use std::str::FromStr;
 use strum::VariantNames;
 
-#[derive(EnumString, EnumVariantNames, PartialEq, Debug)]
+#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Action {
     Pan,
     Tilt,
 }
-#[derive(EnumString, EnumVariantNames, PartialEq, Debug)]
+#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Direction {
     Forward,
@@ -39,15 +46,16 @@ pub enum Direction {
 }
 type StepCount = u8;
 
-pub struct Motor {
-    api: Container<MotorApi>,
+pub struct PTZService {
+    api: Container<PTZApi>,
 }
 
-impl Motor {
-    pub fn new(library: &str) -> Motor {
-        let api: Container<MotorApi> =
-            unsafe { Container::load(library) }.expect("Could not open library or load symbols");
-        Motor { api: api }
+impl PTZService {
+    pub fn new(library: String) -> PTZService {
+        let api: Container<PTZApi> =
+            unsafe { Container::load(&library) }
+            .unwrap_or_else(|_| panic!("cloud not load '{}' library", library));
+            PTZService { api: api }
     }
 
     pub fn init(&mut self) {
@@ -83,38 +91,24 @@ impl Motor {
     }
 }
 
-// #[macro_use]
-// extern crate rouille;
-
-// fn serve(motor: &mut Motor, port: u16) {
-//     rouille::start_server(format!("localhost:{}", port), move |request| {
-//         router!(request,
-//             (GET) (/) => { rouille::Response::redirect_302("/help") },
-//             (GET) (/help) => { rouille::Response::text("usage: /move/<action>/<dir>/<steps>") },
-//             (GET) (/move/{action: String}/{dir: Direction}/{steps: i32}) => {
-//                 movee(&mut motor, action, dir, steps);
-//                 rouille::Response::text(format!("hello, {}", action))
-//             },
-//             _ => rouille::Response::empty_404()
-//         )
-//     });
-// }
+#[macro_use]
+extern crate rouille;
+use std::net::{ToSocketAddrs, SocketAddr};
 
 extern crate clap;
 use clap::{App, Arg, SubCommand};
 
 fn main() {
-    let matches = App::new("camera-controller")
+    let matches = App::new("control")
         .version("1.0")
-        .author("Zadkiel <hello@zadkiel.fr>")
-        .about("Control camera with http.")
         .arg(
             Arg::with_name("library-path")
                 .short("L")
                 .long("library-path")
                 .value_name("PATH")
                 .help("Set path to the camera libraries")
-                .default_value("./mocks/libdevice_kit.so"),
+                .env("LIBRARY_PATH")
+                .default_value("./mocks/libdevice_kit.so")
         )
         .arg(
             Arg::with_name("v")
@@ -123,28 +117,24 @@ fn main() {
                 .help("Sets the level of verbosity"),
         )
         .subcommand(
-            App::new("motor")
-                .about("motor controllers")
+            App::new("ptz")
+                .about("ptz service")
                 .subcommand(
                     App::new("move")
-                        .about("move using cli")
                         .arg(
                             Arg::with_name("action")
                                 .possible_values(&Action::VARIANTS)
-                                .help("which motor to activate")
                                 .index(1)
                                 .required(true),
                         )
                         .arg(
                             Arg::with_name("direction")
                                 .possible_values(&Direction::VARIANTS)
-                                .help("which direction to activate")
                                 .index(2)
                                 .required(true),
                         )
                         .arg(
                             Arg::with_name("steps")
-                                .help("which motor to activate")
                                 .index(3)
                                 .required(true),
                         ),
@@ -156,24 +146,23 @@ fn main() {
                 .about("start web server")
                 .arg(Arg::with_name("host").short("h").help("set target host"))
                 .arg(
-                    Arg::with_name("port")
-                        .default_value("8888")
+                    Arg::with_name("listen")
+                        .default_value("127.0.0.1:8888")
                         .short("p")
                         .help("set target port"),
                 ),
         )
         .get_matches();
 
-    let mut motor = Motor::new(matches.value_of("library-path").unwrap());
+    let mut ptz = PTZService::new(matches.value_of("library-path").unwrap().to_string());
 
     match matches.subcommand() {
-        ("motor", Some(matches)) => match matches.subcommand() {
+        ("ptz", Some(matches)) => match matches.subcommand() {
             ("stop", Some(_)) => {
-                motor.stop();
+                ptz.stop();
             }
             ("move", Some(matches)) => {
-                motor.init();
-                motor.move_(
+                ptz.move_(
                     Action::from_str(matches.value_of("action").unwrap()).unwrap(),
                     Direction::from_str(matches.value_of("direction").unwrap()).unwrap(),
                     matches
@@ -182,23 +171,30 @@ fn main() {
                         .parse::<StepCount>()
                         .unwrap(),
                 );
-                // motor.stop();
             }
-            _ => unreachable!(),
+            _ => println!("{}", matches.usage()),
         },
-        ("server", Some(_matches)) => {
-            println!("Not implemented.")
-            //     motor.stop(
-            //     &mut motor,
-            //     matches
-            //         .subcommand_matches("server")
-            //         .unwrap()
-            //         .value_of("port")
-            //         .unwrap()
-            //         .parse::<u16>()
-            //         .unwrap(),
-            // )
+        ("server", Some(matches)) => {
+            let addrs: Vec<_> = matches.value_of("listen").unwrap()
+                .to_socket_addrs()
+                .expect("Unable to parse socket address")
+                .collect();
+            let addr : SocketAddr = *addrs.first().unwrap();
+
+            println!("listening on {}", addr);
+
+            rouille::start_server(addr, move |request| {
+                router!(request,
+                    (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
+                        // TODO: Reimplement
+                        // motor.move_(action, dir, steps);
+                        println!("called /ptz/move/{}/{}/{}", action, dir, steps);
+                        rouille::Response::text(format!("{{}}"))
+                    },
+                    _ => rouille::Response::empty_404()
+                )
+            });
         }
-        _ => unreachable!(),
+        _ => println!("{}", matches.usage()),
     }
 }
