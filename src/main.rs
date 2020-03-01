@@ -65,31 +65,31 @@ impl Motor {
     }
 }
 
-fn movee(motor: &mut Motor, action: String, dir: Direction, steps: i32) {
-    println!("move: {} {} {}", action, dir, steps);
-    match action.as_ref() {
-        "pan" => motor.pan(dir, steps),
-        "tilt" => motor.tilt(dir, steps),
-        _ => println!("Test"),
-    }
-}
+// fn movee(motor: &mut Motor, action: String, dir: Direction, steps: i32) {
+//     println!("move: {} {} {}", action, dir, steps);
+//     match action.as_ref() {
+//         "pan" => motor.pan(dir, steps),
+//         "tilt" => motor.tilt(dir, steps),
+//         _ => println!("Test"),
+//     }
+// }
 
-#[macro_use]
-extern crate rouille;
+// #[macro_use]
+// extern crate rouille;
 
-fn serve(motor: &mut Motor, port: u16) {
-    rouille::start_server(format!("localhost:{}", port), move |request| {
-        router!(request,
-            (GET) (/) => { rouille::Response::redirect_302("/help") },
-            (GET) (/help) => { rouille::Response::text("usage: /move/<action>/<dir>/<steps>") },
-            (GET) (/move/{action: String}/{dir: Direction}/{steps: i32}) => {
-                movee(&mut motor, action, dir, steps);
-                rouille::Response::text(format!("hello, {}", action))
-            },
-            _ => rouille::Response::empty_404()
-        )
-    });
-}
+// fn serve(motor: &mut Motor, port: u16) {
+//     rouille::start_server(format!("localhost:{}", port), move |request| {
+//         router!(request,
+//             (GET) (/) => { rouille::Response::redirect_302("/help") },
+//             (GET) (/help) => { rouille::Response::text("usage: /move/<action>/<dir>/<steps>") },
+//             (GET) (/move/{action: String}/{dir: Direction}/{steps: i32}) => {
+//                 movee(&mut motor, action, dir, steps);
+//                 rouille::Response::text(format!("hello, {}", action))
+//             },
+//             _ => rouille::Response::empty_404()
+//         )
+//     });
+// }
 
 extern crate clap;
 use clap::{App, Arg, SubCommand};
@@ -176,16 +176,19 @@ fn main() {
                 .parse::<i32>()
                 .unwrap(),
         ),
-        Some("server") => serve(
-            &mut motor,
-            matches
-                .subcommand_matches("server")
-                .unwrap()
-                .value_of("port")
-                .unwrap()
-                .parse::<u16>()
-                .unwrap(),
-        ),
+        Some("server") => {
+            println!("Not implemented.")
+            //     serve(
+            //     &mut motor,
+            //     matches
+            //         .subcommand_matches("server")
+            //         .unwrap()
+            //         .value_of("port")
+            //         .unwrap()
+            //         .parse::<u16>()
+            //         .unwrap(),
+            // )
+        }
         None => println!("No subcommand was used"),
         _ => println!("Some other subcommand was used"),
     }
