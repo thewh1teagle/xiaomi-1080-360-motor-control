@@ -9,7 +9,6 @@ const _MAX_RIGHT: u8 = 66;
 const _MAX_DOWN: u8 = 13;
 const _MAX_UP: u8 = 20;
 
-
 #[derive(WrapperApi)]
 struct PTZApi {
     motor_init: unsafe extern "C" fn(),
@@ -52,10 +51,9 @@ pub struct PTZService {
 
 impl PTZService {
     pub fn new(library: String) -> PTZService {
-        let api: Container<PTZApi> =
-            unsafe { Container::load(&library) }
+        let api: Container<PTZApi> = unsafe { Container::load(&library) }
             .unwrap_or_else(|_| panic!("cloud not load '{}' library", library));
-            PTZService { api: api }
+        PTZService { api: api }
     }
 
     pub fn init(&mut self) {
@@ -93,7 +91,7 @@ impl PTZService {
 
 #[macro_use]
 extern crate rouille;
-use std::net::{ToSocketAddrs, SocketAddr};
+use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
 use clap::{App, Arg, SubCommand};
@@ -108,7 +106,7 @@ fn main() {
                 .value_name("PATH")
                 .help("Set path to the camera libraries")
                 .env("MIJIA_LIB_PATH")
-                .default_value("./mocks/libdevice_kit.so")
+                .default_value("./mocks/libdevice_kit.so"),
         )
         .arg(
             Arg::with_name("v")
@@ -133,11 +131,7 @@ fn main() {
                                 .index(2)
                                 .required(true),
                         )
-                        .arg(
-                            Arg::with_name("steps")
-                                .index(3)
-                                .required(true),
-                        ),
+                        .arg(Arg::with_name("steps").index(3).required(true)),
                 )
                 .subcommand(SubCommand::with_name("stop").about("stop the move")),
         )
@@ -175,11 +169,13 @@ fn main() {
             _ => println!("{}", matches.usage()),
         },
         ("server", Some(matches)) => {
-            let addrs: Vec<_> = matches.value_of("listen").unwrap()
+            let addrs: Vec<_> = matches
+                .value_of("listen")
+                .unwrap()
                 .to_socket_addrs()
                 .expect("Unable to parse socket address")
                 .collect();
-            let addr : SocketAddr = *addrs.first().unwrap();
+            let addr: SocketAddr = *addrs.first().unwrap();
 
             println!("listening on {}", addr);
 
