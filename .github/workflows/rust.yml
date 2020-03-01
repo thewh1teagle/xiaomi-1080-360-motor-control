@@ -1,0 +1,20 @@
+name: Rust
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust-channel: [ 'stable' ]
+        rust-host: [ 'x86_64-unknown-linux-gnu', 'armv7-unknown-linux-gnueabihf' ]
+    steps:
+      - uses: actions/checkout@v1
+      - uses: raftario/setup-rust-action@v1
+        name: Setup rust '${{ matrix.rust-channel }}-${{ matrix.rust-host }}' environment
+        with:
+          rust-channel: ${{ matrix.rust-channel }}
+          rust-host: ${{ matrix.rust-host }}
+      - run: make debug release
+ 
