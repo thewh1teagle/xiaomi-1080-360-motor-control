@@ -50,9 +50,10 @@ pub struct PTZService {
 }
 
 impl PTZService {
-    pub fn new(library: String) -> PTZService {
-        let api: Container<PTZApi> = unsafe { Container::load(&library) }
-            .unwrap_or_else(|_| panic!("cloud not load '{}' library", library));
+    pub fn new(library_path: String) -> PTZService {
+        let devicekit = format!("{}/libdevice_kit.so", library_path);
+        let api: Container<PTZApi> = unsafe { Container::load(&devicekit) }
+            .unwrap_or_else(|_| panic!("cloud not load '{}' library", devicekit));
         PTZService { api: api }
     }
 
@@ -107,7 +108,7 @@ fn main() {
                 .value_name("PATH")
                 .help("Set path to the camera libraries")
                 .env("MIJIA_LIB_PATH")
-                .default_value("./mocks/libdevice_kit.so"),
+                .default_value("./mocks"),
         )
         .arg(
             Arg::with_name("v")

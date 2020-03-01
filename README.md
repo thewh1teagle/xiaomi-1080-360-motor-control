@@ -50,7 +50,7 @@ make release
 ## Usage
 
 ```shell
-export MIJIA_LIB_PATH=/mnt/data/lib/libdevice_kit.so
+export MIJIA_LIB_PATH=/mnt/data/lib
 ./control motor move pan forward 10
 ./control motor stop
 ./control server --listen 0.0.0.0:8888
