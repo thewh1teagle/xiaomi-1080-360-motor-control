@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        releases: [ 'debug', 'release' ]
         rust-channel: [ 'stable' ]
         rust-host: [ 'x86_64-unknown-linux-gnu', 'armv7-unknown-linux-gnueabihf' ]
     steps:
@@ -16,5 +17,5 @@ jobs:
         with:
           rust-channel: ${{ matrix.rust-channel }}
           rust-host: ${{ matrix.rust-host }}
-      - run: make debug release
+      - run: make ${{ matrix.releases }}
  
