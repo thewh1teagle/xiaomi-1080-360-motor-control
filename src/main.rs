@@ -34,18 +34,19 @@ extern crate strum_macros;
 use std::str::FromStr;
 use strum::VariantNames;
 
-#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug)]
+#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug, Copy, Clone)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Action {
     Pan,
     Tilt,
 }
-#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug)]
+#[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug, Copy, Clone)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Direction {
     Forward,
     Reverse,
 }
+
 type StepCount = u8;
 
 pub struct PTZService {
@@ -98,7 +99,7 @@ extern crate rouille;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
-use clap::{App, AppSettings, Arg, SubCommand, crate_version};
+use clap::{crate_version, App, AppSettings, Arg, SubCommand};
 
 fn main() {
     let matches = App::new("control")
@@ -153,8 +154,9 @@ fn main() {
                 ),
         )
         .get_matches();
+    let lib = matches.value_of("library-path").unwrap().to_string();
 
-    let mut ptz = PTZService::new(matches.value_of("library-path").unwrap().to_string());
+    let mut ptz = PTZService::new(lib.clone());
 
     match matches.subcommand() {
         ("ptz", Some(matches)) => match matches.subcommand() {
@@ -187,14 +189,19 @@ fn main() {
 
             rouille::start_server(addr, move |request| {
                 router!(request,
-                    (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
-                        // TODO: Reimplement
-                        // motor.move_(action, dir, steps);
-                        println!("server: ptz move action={} dir={} steps={}", action, dir, steps);
-                        rouille::Response::text("not_implemented")
-                    },
-                    _ => rouille::Response::empty_404()
-                )
+                            (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
+                                // TODO: Reimplement
+                let mut ptz_bis = PTZService::new(lib.clone());
+                        ptz_bis.move_(
+                            action,
+                            dir,
+                            steps,
+                        );
+                                println!("server: ptz move action={} dir={} steps={}", action, dir, steps);
+                                rouille::Response::text("not_implemented")
+                            },
+                            _ => rouille::Response::empty_404()
+                        )
             });
         }
         _ => unreachable!(),
