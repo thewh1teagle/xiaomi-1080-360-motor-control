@@ -5,17 +5,22 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         releases: [ 'debug', 'release' ]
-        rust-channel: [ 'stable' ]
-        rust-host: [ 'x86_64-unknown-linux-gnu', 'armv7-unknown-linux-gnueabihf' ]
+        rust-toolchain: [ 'stable' ]
+        rust-target: [ 'x86_64-unknown-linux-gnu', 'armv7-unknown-linux-gnueabihf' ]
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: raftario/setup-rust-action@v1
-        name: Setup rust '${{ matrix.rust-channel }}-${{ matrix.rust-host }}' environment
+      - uses: actions/checkout@v2
+
+      - name: Setup rust '${{ matrix.rust-channel }}-${{ matrix.rust-host }}' environment
+        uses: actions-rs/toolchain@v1
         with:
-          rust-channel: ${{ matrix.rust-channel }}
-          rust-host: ${{ matrix.rust-host }}
+          profile: minimal
+          toolchain: ${{ matrix.rust-toolchain }}
+          target: ${{ matrix.rust-target }}
+          components: rustfmt, clippy
+
       - run: make ${{ matrix.releases }}
- 
