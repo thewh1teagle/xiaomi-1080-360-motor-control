@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - run: apt-get install -y build-essential ${{ matrix.dependencies }} 
+      - run: sudo apt-get install build-essential ${{ matrix.dependencies }} 
 
       - name: Setup rust '${{ matrix.rust-toolchain }}-${{ matrix.rust-target }}' environment
         uses: actions-rs/toolchain@v1
