@@ -17,19 +17,23 @@ endif
 
 all: $(DEBUG_NAME) mocks
 
-.PHONY: setup-release
-setup-release:
+.PHONY += setup-toolchain
+setup-toolchain:
+	rustup toolchain install stable
+
+.PHONY += setup-release
+setup-release: setup-toolchain
 	rustup target add $(RELEASE_TARGET)
 
-.PHONY: setup-debug
-setup-debug:
+.PHONY += setup-debug
+setup-debug: setup-toolchain
 	rustup target add $(DEBUG_TARGET)
 
-.PHONY: mocks
+.PHONY += mocks
 mocks:
 	@make -C mocks/ --no-print-directory
 
-.PHONY: clean-mocks
+.PHONY += clean-mocks
 clean-mocks:
 	@make -C mocks/ clean --no-print-directory
 
@@ -41,33 +45,33 @@ $(DEBUG_NAME): setup-debug
 	RUSTFLAGS="-C linker=$(DEBUG_CC)" cargo build --target=$(DEBUG_TARGET)
 	cp target/$(DEBUG_TARGET)/debug/$(NAME) $(DEBUG_NAME)
 
-.PHONY: release
+.PHONY += release
 release: $(RELEASE_NAME)
 
-.PHONY: debug
+.PHONY += debug
 debug: $(DEBUG_NAME)
 
-.PHONY: run-release
+.PHONY += run-release
 run-release: $(RELEASE_NAME) mocks
 	@echo -e "##################################################"
 	LIBRARY_PATH=/mnt/data/lib ./$(RELEASE_NAME) $(RUN_ARGS)
 	@echo -e "##################################################"
 
-.PHONY: run-debug
+.PHONY += run-debug
 run-debug: $(DEBUG_NAME) mocks
 	@echo -e "##################################################"
 	LIBRARY_PATH=./mocks ./$(DEBUG_NAME) $(RUN_ARGS)
 	@echo -e "##################################################"
 
-.PHONY: run
+.PHONY += run
 run: run-debug
 
-.PHONY: clean
+.PHONY += clean
 clean: clean-mocks
 	@rm -vf $(RELEASE_NAME)
 	@rm -vf $(DEBUG_NAME)
 	@rm -rf target/
 
-.PHONY: re
+.PHONY += re
 re: clean all
 
