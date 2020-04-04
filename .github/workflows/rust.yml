@@ -37,7 +37,7 @@ jobs:
           target: ${{ matrix.rust-target }}
           components: rustfmt, clippy
 
-      - run: make ${{ matrix.releases }}
+      - run: make ${{ matrix.release }}
 
       - name: Upload binary artefact
         uses: actions/upload-artifact@v1
