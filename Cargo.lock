@@ -265,7 +265,6 @@ dependencies = [
  "clap",
  "dlopen",
  "dlopen_derive",
- "log 0.4.8",
  "rouille",
  "strum",
  "strum_macros",

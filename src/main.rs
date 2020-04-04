@@ -1,4 +1,30 @@
 
+#[macro_use]
+extern crate dlopen_derive;
+extern crate dlopen;
+use dlopen::wrapper::{Container, WrapperApi};
+
+extern crate strum;
+#[macro_use]
+extern crate strum_macros;
+use strum::VariantNames;
+
+extern crate unqlite;
+use unqlite::{UnQLite, KV};
+
+#[macro_use]
+extern crate rouille;
+
+
+use std::str::FromStr;
+use std::fs;
+use std::path;
+use std::net::{SocketAddr, ToSocketAddrs};
+
+extern crate clap;
+use clap::{crate_version, App, AppSettings, Arg};
+
+
 const NAME: &str = "control";
 const DEFAULT_LIBRARY_PATH: &str = "./mocks";
 const DEFAULT_DATABASE_PATH: &str = "./control.db";
@@ -8,17 +34,6 @@ const _MAX_X: u8 = 172;
 const _MAX_Y: u8 = 40;
 const _CENTER_X: u8 = 86;
 const _CENTER_Y: u8 = 20;
-
-
-#[macro_use]
-extern crate dlopen_derive;
-extern crate dlopen;
-use dlopen::wrapper::{Container, WrapperApi};
-
-use std::fs;
-use std::path;
-
-
 
 #[derive(WrapperApi)]
 struct PTZApi {
@@ -36,11 +51,6 @@ struct PTZApi {
     motor_exit: unsafe extern "C" fn(),
 }
 
-extern crate strum;
-#[macro_use]
-extern crate strum_macros;
-use std::str::FromStr;
-use strum::VariantNames;
 
 #[derive(EnumString, EnumVariantNames, PartialEq, Display, Debug, Copy, Clone)]
 #[strum(serialize_all = "kebab_case")]
@@ -57,17 +67,10 @@ pub enum Direction {
 
 type StepCount = u8;
 
-
-extern crate unqlite;
-use unqlite::{UnQLite, KV};
-
-
 pub struct PTZService {
     api: Container<PTZApi>,
     store: UnQLite,
 }
-
-
 
 impl PTZService {
     pub fn new(libraries_path: path::PathBuf, database_path: path::PathBuf) -> PTZService {
@@ -152,6 +155,7 @@ impl PTZService {
 
     pub fn right(&mut self, mut steps: StepCount) {
         println!("ptz right steps={}", steps);
+
         let current_x = self.store.kv_fetch("current_x").unwrap()[0];
         if (current_x as i8 - steps as i8) < 0 {
             steps = current_x;
@@ -162,6 +166,7 @@ impl PTZService {
 
     pub fn up(&mut self, mut steps: StepCount) {
         println!("ptz up steps={}", steps);
+
         let current_y = self.store.kv_fetch("current_y").unwrap()[0];
         if current_y + steps > _MAX_Y {
             steps = _MAX_Y - current_y;
@@ -172,6 +177,7 @@ impl PTZService {
 
     pub fn down(&mut self, mut steps: StepCount) {
         println!("ptz down steps={}", steps);
+
         let current_y = self.store.kv_fetch("current_y").unwrap()[0];
         if (current_y as i8 - steps as i8) < 0 {
             steps = current_y;
@@ -182,6 +188,7 @@ impl PTZService {
 
     pub fn goto(&mut self, x: u8, y: u8) {
         println!("ptz goto x={} y={}", x, y);
+
         let current_x = self.store.kv_fetch("current_x").unwrap()[0];
         let current_y = self.store.kv_fetch("current_y").unwrap()[0];
 
@@ -206,23 +213,18 @@ impl PTZService {
     pub fn save(&mut self, index: u8) {
         let current_x = self.store.kv_fetch("current_x").unwrap()[0];
         let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+
         self.store.kv_store(format!("saved_pos_{}", index), [current_y.clone(), current_y.clone()]).unwrap();
         print!("saved [{:?}, {:?}] to index {:?}\n", current_x, current_y, index);
     }
 
     pub fn restore(&mut self, index: u8) {
         let target_pos = self.store.kv_fetch(format!("saved_pos_{}", index)).unwrap();
+
         self.goto(target_pos[0], target_pos[1]);
         print!("restored {:?} from index {:?}\n", target_pos, index);
     }
 }
-
-#[macro_use]
-extern crate rouille;
-use std::net::{SocketAddr, ToSocketAddrs};
-
-extern crate clap;
-use clap::{crate_version, App, AppSettings, Arg, SubCommand};
 
 fn main() {
     let matches = App::new(NAME)
@@ -246,19 +248,20 @@ fn main() {
                 .env("CONTROL_DATABASE_PATH")
                 .default_value(DEFAULT_DATABASE_PATH),
         )
-        .arg(
-            Arg::with_name("v")
-                .short("v")
-                .multiple(true)
-                .help("Sets the level of verbosity"),
-        )
+        // .arg(
+        //     Arg::with_name("v")
+        //         .short("v")
+        //         .multiple(true)
+        //         .help("Sets the level of verbosity"),
+        // )
         .subcommand(
             App::new("ptz")
                 .setting(AppSettings::SubcommandRequiredElseHelp)
-                .about("ptz service")
+                .about("Run a PTZ command")
                 .subcommand(
                     App::new("move")
-                        .arg(
+                    .about("PAN or TILT towards a direction for X steps")
+                    .arg(
                             Arg::with_name("action")
                                 .possible_values(&Action::VARIANTS)
                                 .index(1)
@@ -273,43 +276,70 @@ fn main() {
                         .arg(Arg::with_name("steps").index(3).required(true)),
                 )
                 .subcommand(
-                    App::new("goto").arg(
-                        Arg::with_name("x").index(1).required(true),
-                    ).arg(
-                        Arg::with_name("y").index(2).required(true),
-                    ),
+                    App::new("goto")
+                        .about("Go to a X, Y position")
+                        .arg(
+                            Arg::with_name("x").index(1).required(true),
+                        )
+                        .arg(
+                            Arg::with_name("y").index(2).required(true),
+                        ),
                 )
                 .subcommand(
-                    App::new("left").arg(Arg::with_name("steps").index(1).required(true)),
+                    App::new("left")
+                        .about("Move LEFT for X steps")
+                        .arg(
+                            Arg::with_name("steps").index(1).required(true)
+                        ),
                 )
                 .subcommand(
-                    App::new("right").arg(Arg::with_name("steps").index(1).required(true)),
+                    App::new("right")
+                        .about("Move RIGHT for X steps")
+                        .arg(
+                            Arg::with_name("steps").index(1).required(true)
+                        ),
                 )
                 .subcommand(
-                    App::new("up").arg(Arg::with_name("steps").index(1).required(true)),
+                    App::new("up")
+                        .about("Move UP for X steps")
+                        .arg(
+                            Arg::with_name("steps").index(1).required(true)
+                        ),
                 )
                 .subcommand(
-                    App::new("down").arg(Arg::with_name("steps").index(1).required(true)),
+                    App::new("down")
+                        .about("Move DOWN for X steps")
+                        .arg(
+                            Arg::with_name("steps").index(1).required(true)
+                        ),
                 )
                 .subcommand(
-                    App::new("save").arg(Arg::with_name("index").index(1).required(true)),
+                    App::new("save")
+                        .about("Save current position at index X")
+                        .arg(
+                            Arg::with_name("index").index(1).required(true)
+                        ),
                 )
                 .subcommand(
-                    App::new("restore").arg(Arg::with_name("index").index(1).required(true)),
+                    App::new("restore")
+                        .about("Restore saved position from index X")
+                        .arg(
+                            Arg::with_name("index").index(1).required(true)
+                        ),
                 )
         )
         .subcommand(
-            SubCommand::with_name("server")
-                .about("start web server")
-                .arg(Arg::with_name("host").short("h").help("set target host"))
+            App::new("server")
+                .about("Start web server")
                 .arg(
                     Arg::with_name("listen")
                         .default_value(DEFAULT_HOST_PORT)
-                        .short("p")
-                        .help("set target host:port"),
+                        .short("l")
+                        .help("Address on which to listen"),
                 ),
         )
         .get_matches();
+
     let lib_path = fs::canonicalize(matches.value_of("libraries-dir").unwrap().to_string()).expect("Libraries PATH is not correct.");
     let db_path = fs::canonicalize(matches.value_of("database-path").unwrap().to_string()).expect("Database PATH is not correct.");
 
