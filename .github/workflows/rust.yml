@@ -19,7 +19,7 @@ jobs:
           - release: release
             binary-name: control
             rust-target: armv7-unknown-linux-gnueabihf
-            dependencies: gcc-arm-linux-gnueabih
+            dependencies: gcc-arm-linux-gnueabihhf
 
     steps:
       - uses: actions/checkout@v2
