@@ -2,3 +2,5 @@
 /control
 /control-debug
 /mocks/*.so
+*.db
+

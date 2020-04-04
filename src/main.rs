@@ -1,16 +1,24 @@
+
+const NAME: &str = "control";
+const DEFAULT_LIBRARY_PATH: &str = "./mocks";
+const DEFAULT_DATABASE_PATH: &str = "./control.db";
+const DEFAULT_HOST_PORT: &str = "0.0.0.0:8888";
+
+const _MAX_X: u8 = 172;
+const _MAX_Y: u8 = 40;
+const _CENTER_X: u8 = 86;
+const _CENTER_Y: u8 = 20;
+
+
 #[macro_use]
 extern crate dlopen_derive;
 extern crate dlopen;
 use dlopen::wrapper::{Container, WrapperApi};
 
-const DEFAULT_LIBRARY_PATH: &str = "./mocks";
-const DEFAULT_HOST_PORT: &str = "0.0.0.0:8888";
+use std::fs;
+use std::path;
 
-// TODO: Ensure we stay in the field
-const _MAX_LEFT: u8 = 66;
-const _MAX_RIGHT: u8 = 66;
-const _MAX_DOWN: u8 = 13;
-const _MAX_UP: u8 = 20;
+
 
 #[derive(WrapperApi)]
 struct PTZApi {
@@ -49,48 +57,163 @@ pub enum Direction {
 
 type StepCount = u8;
 
+
+extern crate unqlite;
+use unqlite::{UnQLite, KV};
+
+
 pub struct PTZService {
     api: Container<PTZApi>,
+    store: UnQLite,
 }
 
+
+
 impl PTZService {
-    pub fn new(library_path: String) -> PTZService {
-        let devicekit = format!("{}/libdevice_kit.so", library_path);
-        let api: Container<PTZApi> = unsafe { Container::load(&devicekit) }
-            .unwrap_or_else(|_| panic!("cloud not load '{}' library", devicekit));
-        PTZService { api: api }
+    pub fn new(libraries_path: path::PathBuf, database_path: path::PathBuf) -> PTZService {
+        let mut device_kit_path = libraries_path.clone();
+        device_kit_path.push("libdevice_kit.so");
+        let device_kit_path_str = device_kit_path.into_os_string().into_string().unwrap();
+        
+        let api: Container<PTZApi> = unsafe { Container::load(&device_kit_path_str) }
+            .unwrap_or_else(|_| panic!("cloud not load '{}' library", device_kit_path_str));
+
+        let database_path_str = database_path.into_os_string().into_string().unwrap();
+        let store = UnQLite::create(database_path_str);
+        if !store.kv_contains("initialized") {
+            store.kv_store("initialized", [1]).unwrap();
+            store.kv_store("current_x", [0]).unwrap();
+            store.kv_store("current_y", [0]).unwrap();
+        }
+
+        PTZService { api: api, store: store }
     }
 
     pub fn init(&mut self) {
         unsafe { self.api.motor_init() }
     }
 
-    pub fn pan(&mut self, dir: Direction, steps: StepCount) {
-        unsafe { self.api.motor_h_dir_set(dir as i32) }
-        // unsafe { self.api.motor_h_position_get() }
-        unsafe { self.api.motor_h_dist_set(steps as i32) }
-        unsafe { self.api.motor_h_move() }
-    }
+    pub fn calibrate(&mut self) {
+        self.store.kv_store("current_x", [_MAX_X]).unwrap();
+        self.store.kv_store("current_y", [_MAX_Y]).unwrap();
 
-    pub fn tilt(&mut self, dir: Direction, steps: StepCount) {
-        unsafe { self.api.motor_v_dir_set(dir as i32) }
-        // unsafe { self.api.motor_v_position_get() }
-        unsafe { self.api.motor_v_dist_set(steps as i32) }
-        unsafe { self.api.motor_v_move() }
+        self.right(_MAX_X);
+        self.store.kv_store("current_x", [0]).unwrap();
+        self.left(_CENTER_X);
+
+        self.down(_MAX_Y);
+        self.store.kv_store("current_y", [0]).unwrap();
+        self.up(_CENTER_Y);
     }
 
     pub fn move_(&mut self, action: Action, dir: Direction, steps: StepCount) {
+        println!("ptz move action={} dir={} steps={}", action, dir, steps);
+
         self.init();
         match action {
-            Action::Pan => self.pan(dir, steps),
-            Action::Tilt => self.tilt(dir, steps),
+            Action::Pan => {
+                let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+                unsafe { self.api.motor_h_dir_set(dir as i32) }
+                unsafe { self.api.motor_h_dist_set(steps as i32) }
+                unsafe { self.api.motor_h_move() }
+        
+                if dir == Direction::Forward {
+                    self.store.kv_store("current_x", [current_x + steps]).unwrap();
+                } else {
+                    self.store.kv_store("current_x", [current_x - steps]).unwrap();
+                }
+            },
+            Action::Tilt => {
+                unsafe { self.api.motor_v_dir_set(dir as i32) }
+                unsafe { self.api.motor_v_dist_set(steps as i32) }
+                unsafe { self.api.motor_v_move() }
+        
+                let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+                if dir == Direction::Forward {
+                    self.store.kv_store("current_y", [current_y + steps]).unwrap();
+                } else {
+                    self.store.kv_store("current_y", [current_y - steps]).unwrap();
+                }
+            },
         }
         self.stop();
+    }
+
+    pub fn left(&mut self, mut steps: StepCount) {
+        println!("ptz left steps={}", steps);
+
+        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        if current_x + steps > _MAX_X {
+            steps = _MAX_X - current_x;
+        }
+
+        self.move_(Action::Pan, Direction::Forward, steps);
+    }
+
+    pub fn right(&mut self, mut steps: StepCount) {
+        println!("ptz right steps={}", steps);
+        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        if (current_x as i8 - steps as i8) < 0 {
+            steps = current_x;
+        }
+
+        self.move_(Action::Pan, Direction::Reverse, steps);
+    }
+
+    pub fn up(&mut self, mut steps: StepCount) {
+        println!("ptz up steps={}", steps);
+        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        if current_y + steps > _MAX_Y {
+            steps = _MAX_Y - current_y;
+        }
+
+        self.move_(Action::Tilt, Direction::Forward, steps);
+    }
+
+    pub fn down(&mut self, mut steps: StepCount) {
+        println!("ptz down steps={}", steps);
+        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        if (current_y as i8 - steps as i8) < 0 {
+            steps = current_y;
+        }
+
+        self.move_(Action::Tilt, Direction::Reverse, steps);
+    }
+
+    pub fn goto(&mut self, x: u8, y: u8) {
+        println!("ptz goto x={} y={}", x, y);
+        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+
+        if x > current_x {
+            self.left(x - current_x);
+        } else if x < current_x {
+            self.right(current_x - x);
+        }
+    
+        if y > current_y {
+            self.up(y - current_y);
+        } else if y < current_y {
+            self.down(current_y - y);
+        }
     }
 
     pub fn stop(&mut self) {
         unsafe { self.api.motor_h_stop() }
         unsafe { self.api.motor_v_stop() }
+    }
+
+    pub fn save(&mut self, index: u8) {
+        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        self.store.kv_store(format!("saved_pos_{}", index), [current_y.clone(), current_y.clone()]).unwrap();
+        print!("saved [{:?}, {:?}] to index {:?}\n", current_x, current_y, index);
+    }
+
+    pub fn restore(&mut self, index: u8) {
+        let target_pos = self.store.kv_fetch(format!("saved_pos_{}", index)).unwrap();
+        self.goto(target_pos[0], target_pos[1]);
+        print!("restored {:?} from index {:?}\n", target_pos, index);
     }
 }
 
@@ -102,17 +225,26 @@ extern crate clap;
 use clap::{crate_version, App, AppSettings, Arg, SubCommand};
 
 fn main() {
-    let matches = App::new("control")
+    let matches = App::new(NAME)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .version(crate_version!())
         .arg(
-            Arg::with_name("library-path")
+            Arg::with_name("libraries-dir")
                 .short("L")
-                .long("library-path")
-                .value_name("PATH")
-                .help("Set path to the camera libraries")
+                .long("libraries-dir")
+                .value_name("DIR_PATH")
+                .help("Set path to the camera libraries directory")
                 .env("MIJIA_LIB_PATH")
                 .default_value(DEFAULT_LIBRARY_PATH),
+        )
+        .arg(
+            Arg::with_name("database-path")
+                .short("D")
+                .long("database-path")
+                .value_name("PATH")
+                .help("Set path to the camera libraries")
+                .env("CONTROL_DATABASE_PATH")
+                .default_value(DEFAULT_DATABASE_PATH),
         )
         .arg(
             Arg::with_name("v")
@@ -140,7 +272,31 @@ fn main() {
                         )
                         .arg(Arg::with_name("steps").index(3).required(true)),
                 )
-                .subcommand(SubCommand::with_name("stop").about("stop the move")),
+                .subcommand(
+                    App::new("goto").arg(
+                        Arg::with_name("x").index(1).required(true),
+                    ).arg(
+                        Arg::with_name("y").index(2).required(true),
+                    ),
+                )
+                .subcommand(
+                    App::new("left").arg(Arg::with_name("steps").index(1).required(true)),
+                )
+                .subcommand(
+                    App::new("right").arg(Arg::with_name("steps").index(1).required(true)),
+                )
+                .subcommand(
+                    App::new("up").arg(Arg::with_name("steps").index(1).required(true)),
+                )
+                .subcommand(
+                    App::new("down").arg(Arg::with_name("steps").index(1).required(true)),
+                )
+                .subcommand(
+                    App::new("save").arg(Arg::with_name("index").index(1).required(true)),
+                )
+                .subcommand(
+                    App::new("restore").arg(Arg::with_name("index").index(1).required(true)),
+                )
         )
         .subcommand(
             SubCommand::with_name("server")
@@ -154,14 +310,14 @@ fn main() {
                 ),
         )
         .get_matches();
-    let lib = matches.value_of("library-path").unwrap().to_string();
+    let lib_path = fs::canonicalize(matches.value_of("libraries-dir").unwrap().to_string()).expect("Libraries PATH is not correct.");
+    let db_path = fs::canonicalize(matches.value_of("database-path").unwrap().to_string()).expect("Database PATH is not correct.");
 
-    let mut ptz = PTZService::new(lib.clone());
-
+    let mut ptz = PTZService::new(lib_path.clone(), db_path.clone());
     match matches.subcommand() {
         ("ptz", Some(matches)) => match matches.subcommand() {
-            ("stop", Some(_)) => {
-                ptz.stop();
+            ("calibrate", Some(_)) => {
+                ptz.calibrate();
             }
             ("move", Some(matches)) => {
                 ptz.move_(
@@ -174,6 +330,35 @@ fn main() {
                         .unwrap(),
                 );
             }
+            ("goto", Some(matches)) => {
+                let target_x: u8 = matches.value_of("x").unwrap().parse().unwrap();
+                let target_y: u8 = matches.value_of("y").unwrap().parse().unwrap();
+                ptz.goto(target_x, target_y);
+            }
+            ("left", Some(matches)) => {
+                let steps: StepCount = matches.value_of("steps").unwrap().parse().unwrap();
+                ptz.left(steps);
+            }
+            ("right", Some(matches)) => {
+                let steps: StepCount = matches.value_of("steps").unwrap().parse().unwrap();
+                ptz.right(steps);
+            }
+            ("up", Some(matches)) => {
+                let steps: StepCount = matches.value_of("steps").unwrap().parse().unwrap();
+                ptz.up(steps);
+            }
+            ("down", Some(matches)) => {
+                let steps: StepCount = matches.value_of("steps").unwrap().parse().unwrap();
+                ptz.down(steps);
+            }
+            ("save", Some(matches)) => {
+                let index: u8 = matches.value_of("index").unwrap().parse().unwrap();
+                ptz.save(index);
+            }
+            ("restore", Some(matches)) => {
+                let index: u8 = matches.value_of("index").unwrap().parse().unwrap();
+                ptz.restore(index);
+            }
             _ => unreachable!(),
         },
         ("server", Some(matches)) => {
@@ -181,7 +366,7 @@ fn main() {
                 .value_of("listen")
                 .unwrap()
                 .to_socket_addrs()
-                .expect("error: unable to parse socket address")
+                .expect("error: unable to listen address")
                 .collect();
             let addr: SocketAddr = *addrs.first().unwrap();
 
@@ -189,19 +374,48 @@ fn main() {
 
             rouille::start_server(addr, move |request| {
                 router!(request,
-                            (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
-                                // TODO: Reimplement
-                let mut ptz_bis = PTZService::new(lib.clone());
-                        ptz_bis.move_(
-                            action,
-                            dir,
-                            steps,
-                        );
-                                println!("server: ptz move action={} dir={} steps={}", action, dir, steps);
-                                rouille::Response::text("not_implemented")
-                            },
-                            _ => rouille::Response::empty_404()
-                        )
+                    (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).move_(action, dir, steps);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/goto/{x: u8}/{y: u8}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).goto(x, y);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/left/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).left(steps);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/right/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).right(steps);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/up/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).up(steps);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/down/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).down(steps);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/save/{index: u8}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).save(index);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    (GET) (/ptz/restore/{index: u8}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).restore(index);
+                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    },
+
+                    _ => rouille::Response::text("bad request.\n").with_status_code(400),
+                )
             });
         }
         _ => unreachable!(),
