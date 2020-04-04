@@ -49,9 +49,6 @@ make release
 
 ## Usage
 
-```
-```
-
 ```shell
 export MIJIA_LIB_PATH=/mnt/data/lib
 ./control ptz calibrate
