@@ -16,6 +16,9 @@ use unqlite::{UnQLite, KV};
 extern crate rouille;
 
 
+use serde::Serialize;
+
+
 use std::str::FromStr;
 use std::fs;
 use std::path;
@@ -186,8 +189,8 @@ impl PTZService {
         self.move_(Action::Tilt, Direction::Reverse, steps);
     }
 
-    pub fn goto(&mut self, x: u8, y: u8) {
-        println!("ptz goto x={} y={}", x, y);
+    pub fn set(&mut self, x: u8, y: u8) {
+        println!("ptz set x={} y={}", x, y);
 
         let current_x = self.store.kv_fetch("current_x").unwrap()[0];
         let current_y = self.store.kv_fetch("current_y").unwrap()[0];
@@ -205,9 +208,19 @@ impl PTZService {
         }
     }
 
+    pub fn get(&mut self) -> (u8, u8) {
+        println!("ptz get");
+
+        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+
+        (current_x, current_y)
+    }
+
     pub fn stop(&mut self) {
-        unsafe { self.api.motor_h_stop() }
-        unsafe { self.api.motor_v_stop() }
+        // unsafe { self.api.motor_h_stop() }
+        // unsafe { self.api.motor_v_stop() }
+        unsafe { self.api.motor_exit() }
     }
 
     pub fn save(&mut self, index: u8) {
@@ -221,7 +234,7 @@ impl PTZService {
     pub fn restore(&mut self, index: u8) {
         let target_pos = self.store.kv_fetch(format!("saved_pos_{}", index)).unwrap();
 
-        self.goto(target_pos[0], target_pos[1]);
+        self.set(target_pos[0], target_pos[1]);
         print!("restored {:?} from index {:?}\n", target_pos, index);
     }
 }
@@ -259,9 +272,13 @@ fn main() {
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .about("Run a PTZ command")
                 .subcommand(
+                    App::new("calibrate")
+                        .about("Run calibration")
+                )
+                .subcommand(
                     App::new("move")
-                    .about("PAN or TILT towards a direction for X steps")
-                    .arg(
+                        .about("PAN or TILT towards a direction for X steps")
+                        .arg(
                             Arg::with_name("action")
                                 .possible_values(&Action::VARIANTS)
                                 .index(1)
@@ -276,14 +293,18 @@ fn main() {
                         .arg(Arg::with_name("steps").index(3).required(true)),
                 )
                 .subcommand(
-                    App::new("goto")
-                        .about("Go to a X, Y position")
+                    App::new("set")
+                        .about("Set current position to X, Y")
                         .arg(
                             Arg::with_name("x").index(1).required(true),
                         )
                         .arg(
                             Arg::with_name("y").index(2).required(true),
                         ),
+                )
+                .subcommand(
+                    App::new("get")
+                        .about("Get current position")
                 )
                 .subcommand(
                     App::new("left")
@@ -360,10 +381,15 @@ fn main() {
                         .unwrap(),
                 );
             }
-            ("goto", Some(matches)) => {
+            ("set", Some(matches)) => {
                 let target_x: u8 = matches.value_of("x").unwrap().parse().unwrap();
                 let target_y: u8 = matches.value_of("y").unwrap().parse().unwrap();
-                ptz.goto(target_x, target_y);
+                ptz.set(target_x, target_y);
+            }
+            ("get", Some(_matches)) => {
+                let (pos_x, pos_y) = ptz.get();
+                
+                print!("x {}\ny {}\n", pos_x, pos_y);
             }
             ("left", Some(matches)) => {
                 let steps: StepCount = matches.value_of("steps").unwrap().parse().unwrap();
@@ -402,49 +428,68 @@ fn main() {
 
             println!("server: listening on {}", addr);
 
+            PTZService::new(lib_path.clone(), db_path.clone()).calibrate();
+
+            #[derive(Serialize)]
+            struct ResponseSuccess { }
+
             rouille::start_server(addr, move |request| {
                 router!(request,
-                    (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
-                        PTZService::new(lib_path.clone(), db_path.clone()).move_(action, dir, steps);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    (GET) (/ptz/calibrate) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).calibrate();
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
-                    (GET) (/ptz/goto/{x: u8}/{y: u8}) => {
-                        PTZService::new(lib_path.clone(), db_path.clone()).goto(x, y);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                    (GET) (/ptz/move/{action: Action}/{dir: Direction}/{steps: StepCount}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).move_(action, dir, steps);
+                        rouille::Response::json(&ResponseSuccess {})
+                    },
+
+                    (GET) (/ptz/set/{x: u8}/{y: u8}) => {
+                        PTZService::new(lib_path.clone(), db_path.clone()).set(x, y);
+                        rouille::Response::json(&ResponseSuccess {})
+                    },
+
+                    (GET) (/ptz/get) => {
+                        let (pos_x, pos_y) = PTZService::new(lib_path.clone(), db_path.clone()).get();
+
+                        #[derive(Serialize)]
+                        struct Position { x: u8, y: u8 }
+
+                        rouille::Response::json(&Position { x: pos_x, y: pos_y })
                     },
 
                     (GET) (/ptz/left/{steps: StepCount}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).left(steps);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
                     (GET) (/ptz/right/{steps: StepCount}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).right(steps);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
                     (GET) (/ptz/up/{steps: StepCount}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).up(steps);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
                     (GET) (/ptz/down/{steps: StepCount}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).down(steps);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
                     (GET) (/ptz/save/{index: u8}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).save(index);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
                     (GET) (/ptz/restore/{index: u8}) => {
                         PTZService::new(lib_path.clone(), db_path.clone()).restore(index);
-                        rouille::Response::text("bip bop!\n").with_status_code(200)
+                        rouille::Response::json(&ResponseSuccess {})
                     },
 
-                    _ => rouille::Response::text("bad request.\n").with_status_code(400),
+                    _ => rouille::Response::empty_404(),
                 )
             });
         }

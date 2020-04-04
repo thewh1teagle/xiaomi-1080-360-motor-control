@@ -49,10 +49,20 @@ make release
 
 ## Usage
 
+```
+```
+
 ```shell
 export MIJIA_LIB_PATH=/mnt/data/lib
+./control ptz calibrate
 ./control ptz move pan forward 10
-./control ptz stop
+./control ptz up 10
+./control ptz right 5
+./control ptz save 1
+./control ptz goto 1 1
+./control ptz restore 1
 ./control server --listen 0.0.0.0:8888
 curl http://0.0.0.0:8888/ptz/move/pan/forward/10
+curl http://0.0.0.0:8888/ptz/goto/1/10
+curl http://0.0.0.0:8888/ptz/goto/1/10
 ```
