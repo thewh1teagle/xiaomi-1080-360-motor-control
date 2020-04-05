@@ -1,6 +1,7 @@
-name: Rust
+name: build
 
-on: [push]
+on:
+  push
 
 jobs:
   build:
