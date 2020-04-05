@@ -29,13 +29,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential ${{ matrix.dependencies }} 
 
-      - name: Setup rust '${{ matrix.rust-toolchain }}-${{ matrix.rust-target }}' environment
+      - name: Setup rust '${{ matrix.rust-toolchain }}/${{ matrix.rust-target }}' environment
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust-toolchain }}
           target: ${{ matrix.rust-target }}
-          components: rustfmt, clippy
+          components: rustfmt
+
+      - name: Cache rust dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ matrix.release }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-${{ matrix.release }}-
 
       - run: make ${{ matrix.release }}
 
