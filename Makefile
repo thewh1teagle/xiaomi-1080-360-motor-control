@@ -17,16 +17,12 @@ endif
 
 all: $(DEBUG_NAME) mocks
 
-.PHONY += setup-toolchain
-setup-toolchain:
-	rustup toolchain install stable
-
 .PHONY += setup-release
-setup-release: setup-toolchain
+setup-release:
 	rustup target add $(RELEASE_TARGET)
 
 .PHONY += setup-debug
-setup-debug: setup-toolchain
+setup-debug:
 	rustup target add $(DEBUG_TARGET)
 
 .PHONY += mocks
