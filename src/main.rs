@@ -9,19 +9,17 @@ extern crate strum;
 extern crate strum_macros;
 use strum::VariantNames;
 
-extern crate unqlite;
-use unqlite::{UnQLite, KV};
-
 #[macro_use]
 extern crate rouille;
 
+use pickledb::{PickleDb, PickleDbDumpPolicy};
 
 use serde::Serialize;
 
-
 use std::str::FromStr;
-use std::fs;
-use std::path;
+use std::path::PathBuf;
+use path_clean::PathClean;
+
 use std::net::{SocketAddr, ToSocketAddrs};
 
 extern crate clap;
@@ -72,11 +70,11 @@ type StepCount = u8;
 
 pub struct PTZService {
     api: Container<PTZApi>,
-    store: UnQLite,
+    store: PickleDb,
 }
 
 impl PTZService {
-    pub fn new(libraries_path: path::PathBuf, database_path: path::PathBuf) -> PTZService {
+    pub fn new(libraries_path: PathBuf, database_path: PathBuf) -> PTZService {
         let mut device_kit_path = libraries_path.clone();
         device_kit_path.push("libdevice_kit.so");
         let device_kit_path_str = device_kit_path.into_os_string().into_string().unwrap();
@@ -84,12 +82,20 @@ impl PTZService {
         let api: Container<PTZApi> = unsafe { Container::load(&device_kit_path_str) }
             .unwrap_or_else(|_| panic!("cloud not load '{}' library", device_kit_path_str));
 
-        let database_path_str = database_path.into_os_string().into_string().unwrap();
-        let store = UnQLite::create(database_path_str);
-        if !store.kv_contains("initialized") {
-            store.kv_store("initialized", [1]).unwrap();
-            store.kv_store("current_x", [0]).unwrap();
-            store.kv_store("current_y", [0]).unwrap();
+        let database_path_str = database_path.clone().into_os_string().into_string().unwrap();
+
+        let mut store = match database_path.exists() {
+            true => PickleDb::load_json(database_path_str, PickleDbDumpPolicy::AutoDump).unwrap(),
+            false => PickleDb::new_json(database_path_str, PickleDbDumpPolicy::AutoDump)
+        };
+
+        if !store.exists("initialized") {
+            store.set("initialized", &true).unwrap();
+            store.set("current_x", &0).unwrap();
+            store.set("current_y", &0).unwrap();
+            println!("db: initialized");
+        } else {
+            println!("db: loaded");
         }
 
         PTZService { api: api, store: store }
@@ -100,15 +106,15 @@ impl PTZService {
     }
 
     pub fn calibrate(&mut self) {
-        self.store.kv_store("current_x", [_MAX_X]).unwrap();
-        self.store.kv_store("current_y", [_MAX_Y]).unwrap();
+        self.store.set("current_x", &_MAX_X).unwrap();
+        self.store.set("current_y", &_MAX_Y).unwrap();
 
         self.right(_MAX_X);
-        self.store.kv_store("current_x", [0]).unwrap();
+        self.store.set("current_x", &0).unwrap();
         self.left(_CENTER_X);
 
         self.down(_MAX_Y);
-        self.store.kv_store("current_y", [0]).unwrap();
+        self.store.set("current_y", &0).unwrap();
         self.up(_CENTER_Y);
     }
 
@@ -118,28 +124,28 @@ impl PTZService {
         self.init();
         match action {
             Action::Pan => {
-                let current_x = self.store.kv_fetch("current_x").unwrap()[0];
                 unsafe { self.api.motor_h_dir_set(dir as i32) }
                 unsafe { self.api.motor_h_dist_set(steps as i32) }
                 unsafe { self.api.motor_h_move() }
-        
-                if dir == Direction::Forward {
-                    self.store.kv_store("current_x", [current_x + steps]).unwrap();
-                } else {
-                    self.store.kv_store("current_x", [current_x - steps]).unwrap();
-                }
+
+                let current_x = self.store.get::<u8>("current_x").unwrap();
+                let next_x = match dir {
+                    Direction::Forward  => current_x + steps,
+                    Direction::Reverse => current_x - steps,
+                };
+                self.store.set("current_x", &next_x).unwrap();
             },
             Action::Tilt => {
                 unsafe { self.api.motor_v_dir_set(dir as i32) }
                 unsafe { self.api.motor_v_dist_set(steps as i32) }
                 unsafe { self.api.motor_v_move() }
         
-                let current_y = self.store.kv_fetch("current_y").unwrap()[0];
-                if dir == Direction::Forward {
-                    self.store.kv_store("current_y", [current_y + steps]).unwrap();
-                } else {
-                    self.store.kv_store("current_y", [current_y - steps]).unwrap();
-                }
+                let current_y = self.store.get::<u8>("current_y").unwrap();
+                let next_y = match dir {
+                    Direction::Forward  => current_y + steps,
+                    Direction::Reverse => current_y - steps,
+                };
+                self.store.set("current_y", &next_y).unwrap();
             },
         }
         self.stop();
@@ -148,7 +154,7 @@ impl PTZService {
     pub fn left(&mut self, mut steps: StepCount) {
         println!("ptz left steps={}", steps);
 
-        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        let current_x = self.store.get::<u8>("current_x").unwrap();
         if current_x + steps > _MAX_X {
             steps = _MAX_X - current_x;
         }
@@ -159,7 +165,7 @@ impl PTZService {
     pub fn right(&mut self, mut steps: StepCount) {
         println!("ptz right steps={}", steps);
 
-        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
+        let current_x = self.store.get::<u8>("current_x").unwrap();
         if (current_x as i8 - steps as i8) < 0 {
             steps = current_x;
         }
@@ -170,7 +176,7 @@ impl PTZService {
     pub fn up(&mut self, mut steps: StepCount) {
         println!("ptz up steps={}", steps);
 
-        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        let current_y = self.store.get::<u8>("current_y").unwrap();
         if current_y + steps > _MAX_Y {
             steps = _MAX_Y - current_y;
         }
@@ -181,7 +187,7 @@ impl PTZService {
     pub fn down(&mut self, mut steps: StepCount) {
         println!("ptz down steps={}", steps);
 
-        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        let current_y = self.store.get::<u8>("current_y").unwrap();
         if (current_y as i8 - steps as i8) < 0 {
             steps = current_y;
         }
@@ -192,8 +198,8 @@ impl PTZService {
     pub fn set(&mut self, x: u8, y: u8) {
         println!("ptz set x={} y={}", x, y);
 
-        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
-        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        let current_x = self.store.get::<u8>("current_x").unwrap();
+        let current_y = self.store.get::<u8>("current_y").unwrap();
 
         if x > current_x {
             self.left(x - current_x);
@@ -211,8 +217,8 @@ impl PTZService {
     pub fn get(&mut self) -> (u8, u8) {
         println!("ptz get");
 
-        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
-        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        let current_x = self.store.get::<u8>("current_x").unwrap();
+        let current_y = self.store.get::<u8>("current_y").unwrap();
 
         (current_x, current_y)
     }
@@ -224,15 +230,17 @@ impl PTZService {
     }
 
     pub fn save(&mut self, index: u8) {
-        let current_x = self.store.kv_fetch("current_x").unwrap()[0];
-        let current_y = self.store.kv_fetch("current_y").unwrap()[0];
+        let current_x = self.store.get::<u8>("current_x").unwrap();
+        let current_y = self.store.get::<u8>("current_y").unwrap();
 
-        self.store.kv_store(format!("saved_pos_{}", index), [current_y.clone(), current_y.clone()]).unwrap();
+        let key = format!("saved_pos_{}", index);
+        self.store.set(&key, &vec![current_y.clone(), current_y.clone()]).unwrap();
         print!("saved [{:?}, {:?}] to index {:?}\n", current_x, current_y, index);
     }
 
     pub fn restore(&mut self, index: u8) {
-        let target_pos = self.store.kv_fetch(format!("saved_pos_{}", index)).unwrap();
+        let key = format!("saved_pos_{}", index);
+        let target_pos = self.store.get::<Vec<u8>>(&key).unwrap();
 
         self.set(target_pos[0], target_pos[1]);
         print!("restored {:?} from index {:?}\n", target_pos, index);
@@ -361,8 +369,8 @@ fn main() {
         )
         .get_matches();
 
-    let lib_path = fs::canonicalize(matches.value_of("libraries-dir").unwrap().to_string()).expect("Libraries PATH is not correct.");
-    let db_path = fs::canonicalize(matches.value_of("database-path").unwrap().to_string()).expect("Database PATH is not correct.");
+    let lib_path = PathBuf::from(matches.value_of("libraries-dir").unwrap().to_string()).clean();
+    let db_path = PathBuf::from(matches.value_of("database-path").unwrap().to_string()).clean();
 
     let mut ptz = PTZService::new(lib_path.clone(), db_path.clone());
     match matches.subcommand() {
