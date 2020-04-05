@@ -16,14 +16,14 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 3. Install the toolchain
 
 ```shell
- $ sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabi
+ $ sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabi clang
  $ curl https://sh.rustup.rs -sSf | sh
  $ rustup toolchain install stable
 ```
 
 4. Clone the repository
 ```
- $ git clone https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
+ $ git clone https://github.com/aslafy-z/xiaomi-1080-360-motor-control.git
 ```
 
 5. Kitchen is ready
