@@ -1,18 +1,8 @@
-NAME=motor
-
 CC=arm-linux-gnueabihf-gcc
-SRCS=$(wildcard *.c)
-CFLAGS += -Wall -Wextra
-LDFLAGS += -L . $(addprefix -l:,$(wildcard lib/*))
+LDIR =$(shell pwd)/lib
+LIBS=$(shell ls -p ./lib  | sed 's/^/-l:/') # get libaries names from ./lib/
 
-all: $(NAME)
+all: motor
 
-$(NAME):
-	$(CC) $(SRCS) $(CFLAGS) $(LDFLAGS) -o $(NAME)
-
-.PHONY: clean
-clean:
-	rm -f $(NAME)
-
-.PHONY: re
-re: clean all
+motor:
+	$(CC) motor.c -L$(LDIR) $(LIBS) -o motor -w
