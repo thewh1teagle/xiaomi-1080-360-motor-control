@@ -2,6 +2,15 @@
 
 Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://www.mi.com/global/camera-360).
 
+
+
+## Requirements
+arm-linux-gcc 
+
+[go compiler](golang.org)
+
+
+
 ## Getting started
 
 1. Is it the same as mine?
@@ -24,16 +33,26 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 If you want to use your own libs, you can get it from the camera using [`pull_libs`](./pull_libs). 
 
 
-5. clonning from master branch (stable)
+5. clonning the repo
 ```git clone
- git clone -b master https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
+ git clone https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
 ```
 
+6. install go requirements and cross compile web-server
 
+```
+go get -u github.com/gorilla/mux
+cd web-server
+env GOOS=linux GOARCH=arm go build
+```
 
-6. Kitchen is ready
+7. build motor binary
 
 ```shell
+cd motor
 make
 ```
+
+8. put web-server and motor in the same directory. now you can use them.
+enjoy!
 
