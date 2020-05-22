@@ -7,7 +7,7 @@ Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://
 ## Requirements
 arm-linux-gcc 
 
-[go compiler](golang.org)
+[go compiler](https://golang.org)
 
 
 
@@ -40,7 +40,7 @@ If you want to use your own libs, you can get it from the camera using [`pull_li
 
 6. install go requirements and cross compile web-server
 
-```
+```shell
 go get -u github.com/gorilla/mux
 cd web-server
 env GOOS=linux GOARCH=arm go build
