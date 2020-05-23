@@ -6,3 +6,7 @@ all: motor
 
 motor:
 	$(CC) motor.c -L$(LDIR) $(LIBS) -o motor -w
+
+
+clean:
+	rm -rf motor

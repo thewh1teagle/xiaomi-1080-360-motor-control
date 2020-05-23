@@ -7,97 +7,22 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
+#include "motor.h"
+
+int h = 0;
+int v = 0;
 
 
-#define FORWARD 1
-#define REVERSE 0
-#define PAN 0
-#define TILT 1
-#define MAX_LEFT 66
-#define MAX_RIGHT 66
-#define MAX_DOWN 13
-#define MAX_UP 20
-#define EVENT_FILE "value"
-
-
-
-
-
-void file_event_service(char *pathname, void (*callback_function)()) {
-    printf("File event service started on file %s \n", pathname);
-    int BUF_LEN = (10 * (sizeof(struct inotify_event) + _PC_NAME_MAX + 1));
-
-    char buf[BUF_LEN];
-    int inotify_fd = 0;
-    struct inotify_event *event = NULL;
-
-    inotify_fd = inotify_init();
-    inotify_add_watch(inotify_fd, pathname, IN_ALL_EVENTS);
-    while (1) {
-        int n = read(inotify_fd, buf, BUF_LEN);
-        char* p = buf;
-        while (p < buf + n) {
-            event = (struct inotify_event*)p;
-            uint32_t mask = event->mask;
-            if (mask & IN_CLOSE_WRITE) {
-                pthread_t thread_id; 
-                pthread_create(&thread_id, NULL, callback_function, NULL); 
-                pthread_join(thread_id, NULL); 
-            }
-            p += sizeof(struct inotify_event) + event->len;
-        }
-    }
-}
-
-
-
-char *readFile(char *filename) {
-    char * buffer = 0;
-    long length;
-    FILE * f = fopen (filename, "r");
-    if (f) {
-        fseek (f, 0, SEEK_END);
-        length = ftell (f);
-        fseek (f, 0, SEEK_SET);
-        buffer = malloc (length);
-        if (buffer) {
-            fread (buffer, 1, length, f);
-        }
-        fclose (f);
-    }
-    return buffer;
-}
-
-
-
-char **split(char string[], char *sep) {
-    char *token = strtok(string, sep);
-    char **argv = calloc(1, sizeof(char*));
-    
-    int i = 0;
-    while (token != NULL) {
-        argv = realloc(argv, sizeof(argv) + sizeof(char*));
-        argv[i] = calloc(strlen(token), sizeof(char));
-        strcpy(argv[i++], token);
-        token = strtok(NULL, sep);
-    }
-    return argv;
-}
-
-
-
-
-
-int motor_move(int motor, int direction, int steps) {
+int _motor_move(int motor, int direction, int steps) {
     switch (motor) {
-        case 0:
+        case PAN:
             motor_h_dir_set(direction);
             motor_h_position_get();
             motor_h_dist_set(steps);
             motor_h_move();
             motor_h_stop();    
             break;
-        case 1:
+        case TILT:
             motor_v_dir_set(direction);
             motor_v_position_get();
             motor_v_dist_set(steps);
@@ -109,26 +34,26 @@ int motor_move(int motor, int direction, int steps) {
     return 0;
 }
 
-int motor_left(int steps) { return motor_move(PAN, FORWARD, steps); }
-int motor_right(int steps) { return motor_move(PAN, REVERSE, steps); }
-int motor_up(int steps) { return motor_move(TILT, FORWARD, steps); }
-int motor_down(int steps) { return motor_move(TILT, REVERSE, steps); }
+int _motor_left(int steps) { return _motor_move(PAN, FORWARD, steps); }
+int _motor_right(int steps) { return _motor_move(PAN, REVERSE, steps); }
+int _motor_up(int steps) { return _motor_move(TILT, FORWARD, steps); }
+int _motor_down(int steps) { return _motor_move(TILT, REVERSE, steps); }
 
 
 
 
 void move(char *direction, int steps) {
     if (strcmp(direction,"left") == 0) {
-        motor_left(steps);
+        _motor_left(steps);
     }
     else if (strcmp(direction,"right") == 0) {
-        motor_right(steps);
+        _motor_right(steps);
     }
     else if (strcmp(direction,"up") == 0) {
-        motor_up(steps);
+        _motor_up(steps);
     }
     else if (strcmp(direction,"down") == 0) {
-        motor_down(steps);
+        _motor_down(steps);
     }
 }
 
@@ -144,10 +69,52 @@ void callback_motor() {
 }
 
 
-int main(void) {
-    motor_init();
-    file_event_service(EVENT_FILE, callback_motor);
-    motor_exit();
-    return 0;
+
+void motor_calibrate() {
+    //Set internal position to MAX without moving to make sure the functions allow a max # of steps
+    h = MAX_H;
+    v = MAX_V;
+
+    //calibrate horizontal axis first, right is 0. Move to center afterwards
+    motor_right(MAX_H);
+    h = 0;
+    motor_left(CENTER_H);
+
+    //calibrate vertical axis, down is 0. Move to center afterwards
+    motor_down(MAX_V);
+    v = 0;
+    motor_up(CENTER_V);
 }
+
+
+void store_pos(int h, int v) {
+    FILE *fp;
+    fp = fopen(POSITION_FILE, "w");
+    fprintf(fp, "%d,%d", h, v);
+    fclose(fp);
+}
+
+//Load current pos from file
+void load_pos() {
+    FILE *fp;
+    char str[POS_LEN];
+
+    fp = fopen(POSITION_FILE, "r");
+    if (fp == NULL){
+        printf("No position found, calibrating...");
+        motor_calibrate();
+        load_pos();
+        return;
+    }
+    fgets(str, POS_LEN, fp);
+
+    fclose(fp);
+
+    char *positions[] = split(str, ",");
+    ///split params for h and v
+    h = atoi(positions[0]);
+    v = atoi(positions[1]);
+    free(positions);
+}
+
 
