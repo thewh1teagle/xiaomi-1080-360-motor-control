@@ -9,16 +9,16 @@
 #include <stdlib.h>
 #include "motor.h"
 
-int h = 0;
-int v = 0;
 
 
+// Xiaomi motor horizontal control functions - from lib folder
 extern void motor_h_dir_set(int direction);
 extern void motor_h_position_get();
 extern void motor_h_dist_set(int steps);
 extern void motor_h_move();
 extern void motor_h_stop();
 
+// Xiaomi motor vertical control functions - from lib folder
 extern void motor_v_dir_set(int direction);
 extern void motor_v_position_get();
 extern void motor_v_dist_set(int steps);
@@ -26,7 +26,7 @@ extern void motor_v_move();
 extern void motor_v_stop();
 
 
-int raw_motor_move(int motor, int direction, int steps) {
+void raw_motor_move(int motor, int direction, int steps) {
     /* use xiaomi function from shared libary for 
     controlling the motor */
 
@@ -47,13 +47,12 @@ int raw_motor_move(int motor, int direction, int steps) {
             break;
     }
     
-    return 0;
 }
 
-int raw_motor_left(int steps){return raw_motor_move(PAN, FORWARD, steps);}
-int raw_motor_right(int steps){return raw_motor_move(PAN, REVERSE, steps);}
-int raw_motor_up(int steps){return raw_motor_move(TILT, FORWARD, steps);}
-int raw_motor_down(int steps){ return raw_motor_move(TILT, REVERSE, steps);}
+void raw_motor_left(int steps){raw_motor_move(PAN, FORWARD, steps);}
+void raw_motor_right(int steps){raw_motor_move(PAN, REVERSE, steps);}
+void raw_motor_up(int steps){raw_motor_move(TILT, FORWARD, steps);}
+void raw_motor_down(int steps){ raw_motor_move(TILT, REVERSE, steps);}
 
 
 
@@ -93,7 +92,7 @@ void callback_motor() {
     int steps = atoi(argv[1]);
     char *direction = argv[0];
     free(argv);
-    move(direction, steps);
+    motor_move(direction, steps);
 }
 
 
@@ -104,14 +103,14 @@ void motor_calibrate() {
     v = MAX_V;
 
     //calibrate horizontal axis first, right is 0. Move to center afterwards
-    motor_right(MAX_H);
+    motor_move("right", MAX_H);
     h = 0;
-    motor_left(CENTER_H);
+    motor_move("left", CENTER_H);
 
     //calibrate vertical axis, down is 0. Move to center afterwards
-    motor_down(MAX_V);
+    motor_move("down", MAX_V);
     v = 0;
-    motor_up(CENTER_V);
+    motor_move("up", CENTER_V);
 }
 
 

@@ -1,12 +1,16 @@
 CC=arm-linux-gnueabihf-gcc
-LDIR =$(shell pwd)/lib
-LIBS=$(shell ls -p ./lib  | sed 's/^/-l:/') # get libaries names from ./lib/
+CFLAGS = -Wall
+CFILES := $(wildcard *.c)
+ODIR =$(shell pwd)/lib
+OBJS=$(shell ls -p ./lib  | sed 's/^/-l:/') # get libaries names from ./lib/
 
-all: motor
 
-motor:
-	$(CC) motor.c -L$(LDIR) $(LIBS) -o motor -w
+motor.o: motor.c motor.h
+utils.o: utils.c utils.h
 
+
+all:
+	$(CC) $(CFLAGS) $(CFILES) -L$(ODIR) $(OBJS) -o motor -w
 
 clean:
 	rm -rf motor

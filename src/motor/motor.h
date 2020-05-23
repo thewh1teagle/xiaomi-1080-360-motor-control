@@ -16,14 +16,17 @@
 
 
 
-int raw_motor_move(int motor, int direction, int steps) {}
-int raw_motor_left(int steps) {}
-int raw_motor_right(int steps) {}
-int raw_motor_up(int steps) {}
-int raw_motor_down(int steps) {}
-void callback_motor() {}
-void motor_move(char *direction, int steps) {}
-void store_pos(int h, int v) {}
-void load_pos() {}
-void motor_calibrate() {}
-void callback_motor() {}
+void raw_motor_move(int motor, int direction, int steps);
+void raw_motor_left(int steps);
+void raw_motor_right(int steps);
+void raw_motor_up(int steps);
+void raw_motor_down(int steps);
+void callback_motor();
+void motor_move(char *direction, int steps);
+void store_pos(int h, int v);
+void load_pos();
+void motor_calibrate();
+void callback_motor();
+
+int h = 0;
+int v = 0;

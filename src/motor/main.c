@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "motor.h"
 
-
+// Xiaomi functions from lib folder
 extern void motor_init();
 extern void motor_exit();
 
