@@ -11,8 +11,19 @@
 #define MAXPATHLEN 200  //Max Len for full path
 
 
-#define EVENT_FILE "value"
-#define POSITION_FILE "position"
+#define EVENT_FILE "event" // file for controlling the motor (by writing to it)
+#define POSITION_FILE "position" // file for store the position
 
 
+
+int raw_motor_move(int motor, int direction, int steps) {}
+int raw_motor_left(int steps) {}
+int raw_motor_right(int steps) {}
+int raw_motor_up(int steps) {}
+int raw_motor_down(int steps) {}
+void callback_motor() {}
+void motor_move(char *direction, int steps) {}
+void store_pos(int h, int v) {}
+void load_pos() {}
+void motor_calibrate() {}
 void callback_motor() {}

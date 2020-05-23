@@ -10,6 +10,10 @@
 
 
 char **split(char string[], char *sep) {
+    /*
+    get string pointer and sep , return array of splited string 
+    don't forget to free the return pointer 
+    */
     char *token = strtok(string, sep);
     char **argv = calloc(1, sizeof(char*));
     
@@ -25,6 +29,10 @@ char **split(char string[], char *sep) {
 
 
 char *readFile(char *filename) {
+    /* 
+    get contents of file
+    don't forget to free the buffer
+    */
     char * buffer = 0;
     long length;
     FILE * f = fopen (filename, "r");
@@ -45,6 +53,10 @@ char *readFile(char *filename) {
 
 
 void file_event_service(char *pathname, void (*callback_function)()) {
+    /*
+    watch file changes, if the file changed,
+    start callback function in new thread
+    */
     printf("File event service started on file %s \n", pathname);
     int BUF_LEN = (10 * (sizeof(struct inotify_event) + _PC_NAME_MAX + 1));
 

@@ -12,11 +12,12 @@
 #include "motor.h"
 
 
-
+extern void motor_init();
+extern void motor_exit();
 
 int main(void) {
-    motor_init();
-    file_event_service(EVENT_FILE, callback_motor);
-    motor_exit();
+    motor_init(); // miio function
+    file_event_service(EVENT_FILE, callback_motor); // start event listener
+    motor_exit(); // miio function
     return 0;
 }
