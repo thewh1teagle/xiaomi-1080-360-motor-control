@@ -5,7 +5,7 @@ Provides a way controlling the motor directly on the [MJSXJ02CM camera](https://
 
 
 ## Requirements
-arm-linux-gcc 
+ARM gcc
 
 
 
@@ -33,7 +33,7 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
  git clone https://github.com/thewh1teagle/xiaomi-1080-360-motor-control.git
 ```
 
-7. build motor binary
+7. cross compile
 
 ```shell
 make TARGET=cross
