@@ -1,4 +1,4 @@
-LDFLAGS=-ldl -pthread -w
+LDFLAGS=-ldl -pthread -w 
 
 ifeq ($(TARGET),cross)
 	CC = arm-linux-gnueabihf-gcc
@@ -11,7 +11,7 @@ all: --motord
 test: --motord --libdevice_kit
 
 --motord: motord.c
-	$(CC) $(LDFLAGS) -o motord motord.c 
+	$(CC) -o motord motord.c $(LDFLAGS)
 --libdevice_kit:
 	$(CC) -shared libdevice_kit.c -o libdevice_kit.so
 
