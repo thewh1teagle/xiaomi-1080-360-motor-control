@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -63,9 +64,34 @@ func motor_move_route(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func get_local_ip() string {
+	tt, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
+	for _, t := range tt {
+		aa, err := t.Addrs()
+		if err != nil {
+			panic(err)
+		}
+		for _, a := range aa {
+			ipnet, ok := a.(*net.IPNet)
+			if !ok {
+				continue
+			}
+			v4 := ipnet.IP.To4()
+			if v4 == nil || v4[0] == 127 { // loopback address
+				continue
+			}
+			return v4.String()
+		}
+	}
+	return ""
+}
+
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/motor_move/{motor}/{direction}/{steps}", motor_move_route).Methods("GET")
-	fmt.Println("Server started at port 8080")
+	fmt.Printf("Server started at http://%s:8080 \n", get_local_ip())
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

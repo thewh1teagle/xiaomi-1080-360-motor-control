@@ -11,7 +11,7 @@ all: --motord
 test: --motord --libdevice_kit
 
 --motord: motord.c
-	$(CC) -o motord motord.c $(LDFLAGS)
+	$(CC) motord.c $(LDFLAGS) -o motord
 --libdevice_kit:
 	$(CC) -shared libdevice_kit.c -o libdevice_kit.so
 
