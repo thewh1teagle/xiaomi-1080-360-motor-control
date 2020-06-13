@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xiaomi motor control</title>
+
+    <style>
+
+        /* * {
+            border: 1px solid red;
+        } */
+
+        body {
+            background: #0F2027;  /* fallback for old browsers */
+            background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);  /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to right, #2C5364, #203A43, #0F2027); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
+        }
+
+        span {cursor:pointer; }
+
+		.number{
+			margin:100px;
+            display: block;
+            position: static;
+		}
+		.minus, .plus{
+			width:20px;
+			height:20px;
+			background:#f2f2f2;
+			border-radius:4px;
+			padding:8px 5px 8px 5px;
+			border:1px solid #ddd;
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+		}
+		input{
+			height:40px;
+            width: 100px;
+            text-align: center;
+            font-size: 26px;
+			border:1px solid #ddd;
+			border-radius:4px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+
+        .buttons-motor {
+            font-size: 120%;
+            background-color: white;
+            width: 40%;
+            height: 100%;
+            margin: 5px;
+            cursor:pointer;
+            border: 20px solid white;
+            border-radius: 15px;
+        }
+
+        
+
+        .div-led {
+            position: relative;
+            display: block;
+        }
+
+     
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    
+        .container-number {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
+        .header {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .container-led {
+            display: flex;
+            justify-content: flex-start;
+            position: absolute;
+            left: 70%;
+            top: 13%;
+            padding: 5px;
+            border: 10px solid white;
+            border-radius: 2px;
+        }
+
+    </style>
+
+</head>
+<body>
+
+
+    <div class="header">
+        <h1 style="color: white;">
+            Mijia motor control
+        </h1>
+    </div>
+
+
+    <div class="container-number">
+    <div class="number">
+        <h1 style="color: white; display: flex; justify-content: center;">Steps</h1>
+        <span onclick="span_minus();" class="minus">-</span>
+        <input id="steps" type="text" value="5"/>
+        <span onclick="span_plus();" class="plus">+</span>
+    </div>
+    </div>
+
+    <div class="container">
+    <div class="div-motor-buttons" style="text-align:center;width:480px; height: 80px;">
+        <button class="buttons-motor" onclick="moveup()">UP</button><br><br>
+        <button class="buttons-motor" onclick="moveleft()">LEFT</button>
+        <button class="buttons-motor" onclick="moveright()">RIGHT</button><br><br>
+        <button class="buttons-motor" onclick="movedown()">DOWN</button>
+    </div>
+    </div>
+
+
+      
+
+      
+
+    <div class="container-led">
+      <div class="div-led">
+        
+        <label for="cars"><h4 style="color: white;">new!</h4><h1 style="color: white;">led control</h1></label>
+
+        <select  name="color" id="color">
+            <option value="">Color</option>
+            <option value="blue">Blue</option>
+            <option value="yellow">Yellow</option>
+        </select> 
+        <button onclick="led_on();">On</button>
+        <button onclick="led_off();">Off</button>
+      </div>
+    </div>
+    <script>
+
+        var steps = document.getElementById("steps")
+
+        const span_minus = function() {
+            document.getElementById("steps").value = parseInt(document.getElementById("steps").value) - 1
+        }
+        
+        const span_plus = function() {
+            document.getElementById("steps").value = parseInt(document.getElementById("steps").value) + 1
+        }
+
+        const moveup = function() {
+            fetch(`/motor_move/tilt/forward/${steps.value}`)
+        }
+
+        const movedown = function() {
+            fetch(`/motor_move/tilt/reverse/${steps.value}`)
+        }
+        const moveright = function() {
+            fetch(`/motor_move/pan/reverse/${steps.value}`)
+        }
+        const moveleft = function() {
+            fetch(`/motor_move/pan/forward/${steps.value}`)
+        }
+   
+
+
+        const led_on = function() {
+            fetch(`/led_control/${document.getElementById("color").value}/on`)
+        }
+
+        const led_off = function() {
+            fetch(`led_control/${document.getElementById("color").value}/off`)
+        }
+    </script>
+</body>
+</html>
