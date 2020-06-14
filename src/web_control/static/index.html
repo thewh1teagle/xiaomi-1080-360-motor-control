@@ -182,6 +182,36 @@
         const led_off = function() {
             fetch(`led_control/${document.getElementById("color").value}/off`)
         }
+
+
+        document.onkeydown = function(e) {
+            switch (e.keyCode) {
+                case 37:
+                    // left
+                    moveleft()
+                    break;
+                case 38:
+                    // up
+                    moveup()
+                    break;
+                case 39:
+                    // right
+                    moveright()
+                    break;
+                case 40:
+                    // down
+                    movedown()
+                    break;
+            }
+        };
+
+        window.addEventListener("keydown", function(e) {
+            // space and arrow keys
+            if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+                e.preventDefault();
+            }
+        }, false);
+
     </script>
 </body>
 </html>

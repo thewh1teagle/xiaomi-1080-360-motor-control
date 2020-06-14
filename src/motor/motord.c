@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #define EVENT_FILE "event" // file for controlling the motor (by writing to it)
 #define STATUS_FILE "status" // file for status of motor, to know if max offset of direction
 
@@ -44,6 +43,10 @@ void (*motor_v_position_get)();
 void (*motor_v_dist_set)(int steps);
 void (*motor_v_move)();
 void (*motor_v_stop)();
+
+
+
+
 
 
 void miio_motor_move(int motor, int direction, int steps) {
@@ -233,6 +236,12 @@ void callback_motor() {
     motor_move(motor, direction, steps);
 }
 
+void reset_motor() {
+    H_POSITION = 0;
+    V_POSITION = 0;
+    write_motor_status(0);
+}
+
 
 
 void motor_calibrate() {
@@ -246,11 +255,7 @@ void motor_calibrate() {
     //calibrate vertical axis, down is 0. Move to center afterwards
     miio_motor_move(TILT, FORWARD, MAX_V + abs(MIN_V) + 4);
     miio_motor_move(TILT, REVERSE, CENTER_V);
-    H_POSITION = 0;
-    V_POSITION = 0;
-    write_motor_status(0);
 }
-
 
 
 
@@ -277,7 +282,7 @@ void dl_load(void *handle) {
 
 
 
-int main(void) {
+int main(int argc, char *argv[]) {
     void *handle;
     handle = dlopen("libdevice_kit.so", RTLD_LAZY);
     if (!handle) {
@@ -287,8 +292,13 @@ int main(void) {
     } 
     dl_load(handle);
     motor_init();
+    if (argc > 1) {
+        if (strcmp(argv[1], "--calibrate") == 0) {
+            motor_calibrate();
+        }
+    }
+    reset_motor();
 
-    motor_calibrate();
     file_event_service(EVENT_FILE,callback_motor);
     
 
