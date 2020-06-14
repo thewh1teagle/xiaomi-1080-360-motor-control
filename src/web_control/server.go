@@ -68,7 +68,6 @@ func miio_motor_move(motor string, direction string, steps string) {
 		return
 	}
 	l, err := f.WriteString(motor + " " + direction + " " + steps)
-	fmt.Println(l, "bytes written successfully")
 	if err != nil {
 		fmt.Println(err)
 		f.Close()
@@ -90,8 +89,6 @@ func read_position_status() int {
 	check(err)
 	s := string(dat[0])
 	i, err := strconv.Atoi(s)
-	fmt.Printf("status: %v \n", s)
-	fmt.Printf("status: %d \n", i)
 	return (i)
 }
 
