@@ -67,7 +67,7 @@ func miio_motor_move(motor string, direction string, steps string) {
 		fmt.Println(err)
 		return
 	}
-	l, err := f.WriteString(motor + " " + direction + " " + steps)
+	_, err = f.WriteString(motor + " " + direction + " " + steps)
 	if err != nil {
 		fmt.Println(err)
 		f.Close()
