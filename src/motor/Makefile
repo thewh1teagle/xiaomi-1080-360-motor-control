@@ -1,19 +1,15 @@
 LDFLAGS=-ldl -pthread -w 
+CC = gcc
+CROSSCC = arm-linux-gnueabihf-gcc
 
-ifeq ($(TARGET),cross)
-	CC = arm-linux-gnueabihf-gcc
-else
-        CC = gcc
-endif
+all: cross
 
+cross: 
+	$(CROSSCC) motord.c $(LDFLAGS) -o motord  
 
-all: --motord
-test: --motord --libdevice_kit
-
---motord: motord.c
-	$(CC) motord.c $(LDFLAGS) -o motord
---libdevice_kit:
+test:
+	$(CC) motord.c $(LDFLAGS) -o motord  
 	$(CC) -shared ./mocks/libdevice_kit.c -o libdevice_kit.so
 
 clean:
-	$(shell rm rf motord libdevice_kit.so event status 2>/dev/null)
+	$(RM) motord libdevice_kit.so event status
