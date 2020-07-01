@@ -217,23 +217,26 @@ void callback_motor() {
     
     int motor, direction, steps = 0;
 
-    
-
-    if (strcmp(argv[0], "pan") == 0) {
-         motor = PAN;
-    } else {
-        motor = TILT;
+    if (strcmp(argv[0], "calibrate") == 0) {
+        motor_calibrate();
     }
+    else {
+        if (strcmp(argv[0], "pan") == 0) {
+            motor = PAN;
+        } else {
+            motor = TILT;
+        }
 
-    if (strcmp(argv[1], "forward") == 0) {
-        direction = FORWARD;
-    } else {
-        direction = REVERSE;
+        if (strcmp(argv[1], "forward") == 0) {
+            direction = FORWARD;
+        } else {
+            direction = REVERSE;
+        }
+        
+        steps = atoi(argv[2]);
+        free(argv);
+        motor_move(motor, direction, steps);
     }
-    
-    steps = atoi(argv[2]);
-    free(argv);
-    motor_move(motor, direction, steps);
 }
 
 void reset_motor() {
