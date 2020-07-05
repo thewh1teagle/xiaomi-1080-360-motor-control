@@ -234,9 +234,9 @@ void callback_motor() {
         }
         
         steps = atoi(argv[2]);
-        free(argv);
         motor_move(motor, direction, steps);
     }
+    free(argv);
 }
 
 void reset_motor() {
@@ -258,6 +258,7 @@ void motor_calibrate() {
     //calibrate vertical axis, down is 0. Move to center afterwards
     miio_motor_move(TILT, FORWARD, MAX_V + abs(MIN_V) + 4);
     miio_motor_move(TILT, REVERSE, CENTER_V);
+    reset_motor();
 }
 
 
