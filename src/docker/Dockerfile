@@ -10,7 +10,12 @@ FROM ubuntu:18.04
 RUN apt-get update && apt-get install -y  \
 	bash-completion vim nano git curl wget unzip \
 	g++-arm-linux-gnueabihf make file tmux \
-	gcc
+	gcc software-properties-common
+
+RUN add-apt-repository ppa:longsleep/golang-backports
+RUN apt update
+RUN apt install -y golang-go
+RUN go get -u github.com/gorilla/mux
 
 RUN mkdir /src
 
