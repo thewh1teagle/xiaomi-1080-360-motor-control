@@ -197,7 +197,7 @@ func main() {
 
 	validate_args()
 
-	if _, err := os.Stat(EVENT_FILE); os.IsNotExist(err) {
+	if _, err := os.Stat(MOTORD_FOLDER + "/" + EVENT_FILE); os.IsNotExist(err) {
 		fmt.Printf("%v file not found! \n", EVENT_FILE)
 		panic("event file not found!")
 	}
