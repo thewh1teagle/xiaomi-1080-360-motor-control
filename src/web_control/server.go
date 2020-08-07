@@ -16,7 +16,8 @@ const FORWARD = 1
 const REVERSE = 0
 const PAN = 1
 const TILT = 0
-
+var MOTORD_FOLDER = ""
+var EVENT_FILE = "event"
 
 // spaHandler implements the http.Handler interface, so we can use it
 // to respond to HTTP requests. The path to the static directory and
@@ -62,7 +63,7 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func miio_motor_move(motor string, direction string, steps string) {
-	f, err := os.Create("event")
+	f, err := os.Create(MOTORD_FOLDER + "/" + EVENT_FILE)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -82,10 +83,8 @@ func miio_motor_move(motor string, direction string, steps string) {
 }
 
 
-
-
 func read_position_status() int {
-	dat, err := ioutil.ReadFile("status")
+	dat, err := ioutil.ReadFile(MOTORD_FOLDER + "/" + "status")
 	check(err)
 	s := string(dat[0])
 	i, err := strconv.Atoi(s)
@@ -148,7 +147,7 @@ func motor_move_route(w http.ResponseWriter, r *http.Request) {
 	if status == 0 {
 		fmt.Fprintf(w, "ok")
 	} else {
-		fmt.Fprintf(w, "max")
+		fmt.Fprintf(w, "overflow")
 	}
 }
 
@@ -173,7 +172,36 @@ func get_local_ip() string {
 	return ""
 }
 
+
+func print_usage() {
+	programName := os.Args[0]
+	fmt.Println("Usage: ")
+	fmt.Printf("%v --event_file <path> \n", programName)
+}	
+
+func validate_args() {
+	argsWithoutProg := os.Args[1:]
+
+	for index, value := range argsWithoutProg {
+        if value == "--help" {
+			print_usage()
+			os.Exit(0)
+		} else if value == "--motord_folder" {
+			MOTORD_FOLDER = argsWithoutProg[index + 1]
+		}
+    }
+}
+
+
 func main() {
+
+	validate_args()
+
+	if _, err := os.Stat(EVENT_FILE); os.IsNotExist(err) {
+		fmt.Printf("%v file not found! \n", EVENT_FILE)
+		panic("event file not found!")
+	}
+
 	router := mux.NewRouter().StrictSlash(true)
 
 	
