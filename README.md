@@ -61,8 +61,7 @@ You can also build it for your pc to test it without the camera.
 
 ```shell
 make test
-export "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/"
-./motord
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd) ./motord
 ```
 
 6. Clean everything!

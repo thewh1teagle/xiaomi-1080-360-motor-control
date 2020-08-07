@@ -1,2 +1,5 @@
 motord
 web_control
+event
+*.so
+status
