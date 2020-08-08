@@ -168,7 +168,8 @@ void motor_move(motor, direction, steps) {
                 write_motor_status(1);
                 printf("[DEBUG] MAX H! \n");
                 return;
-            }
+            } 
+            write_motor_status(0);
             H_POSITION += steps;
         } else {
             if (H_POSITION - steps < MIN_H) {
@@ -176,6 +177,7 @@ void motor_move(motor, direction, steps) {
                 printf("[DEBUG] MIN H! \n");
                 return;
             }
+            write_motor_status(0);
             H_POSITION -= steps;
         }
         break;
@@ -187,19 +189,20 @@ void motor_move(motor, direction, steps) {
                 printf("[DEBUG] MAX V! \n");
                 return;
             }
+            write_motor_status(0);
             V_POSITION += steps;
         } else {
             if (V_POSITION - steps < MIN_V) {
                 write_motor_status(1);
                 printf("[DEBUG] MIN V! \n");
                 return;
-            }
+            } 
+            write_motor_status(0);
             V_POSITION -= steps;
         break;
         }
     }
     miio_motor_move(motor, direction, steps);
-    write_motor_status(0);
 }
 
 

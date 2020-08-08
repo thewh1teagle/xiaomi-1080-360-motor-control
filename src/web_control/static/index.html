@@ -163,8 +163,9 @@
             var result = await fetch(`/motor_move/tilt/forward/${steps.value}`)
             if (await result.text() == "overflow") {
                 document.getElementById("btn-up").style.backgroundColor="red";
-            } else {
-                document.getElementById("btn-up").style.backgroundColor="white";
+                setTimeout(() => {
+                    document.getElementById("btn-up").style.backgroundColor="white";
+                }, 500);
             }
         }
 
@@ -172,24 +173,27 @@
             var result = await fetch(`/motor_move/tilt/reverse/${steps.value}`)
             if (await result.text() == "overflow") {
                 document.getElementById("btn-down").style.backgroundColor="red";
-            } else {
-                document.getElementById("btn-down").style.backgroundColor="white";
+                setTimeout(() => {
+                    document.getElementById("btn-down").style.backgroundColor="white";
+                }, 500);
             }
         }
         const moveright = async function() {
             var result = await fetch(`/motor_move/pan/reverse/${steps.value}`)
             if (await result.text() == "overflow") {
                 document.getElementById("btn-right").style.backgroundColor="red";
-            } else {
-                document.getElementById("btn-right").style.backgroundColor="white";
+                setTimeout(() => {
+                    document.getElementById("btn-right").style.backgroundColor="white";
+                }, 500);
             }
         }
         const moveleft = async function() {
             var result = await fetch(`/motor_move/pan/forward/${steps.value}`)
             if (await result.text() == "overflow") {
                 document.getElementById("btn-left").style.backgroundColor="red";
-            } else {
-                document.getElementById("btn-left").style.backgroundColor="white";
+                setTimeout(() => {
+                    document.getElementById("btn-left").style.backgroundColor="white";
+                }, 500);
             }
         }
    

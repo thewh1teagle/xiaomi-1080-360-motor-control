@@ -44,11 +44,11 @@ http:8080//<your-camera-ip/
 
 3. Build the container 
 ```shell
-docker build -t motor .
+sudo docker build -t motor .
 ```
 4. Run docker container with current directory mounted
 ```shell
-docker run -it -v $(pwd):/src motor
+sudo docker run -it -v $(pwd):/src motor
 ```
 
 5. Cross compile (in every different module e.g web_control)
@@ -66,7 +66,7 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd) ./motord
 
 6. Clean everything!
 ```
-docker image rm motor --force
+sudo docker image rm motor --force
 sudo apt autoremove docker.io
 ```
 
