@@ -11,8 +11,8 @@
 #define EVENT_FILE "event" // file for controlling the motor (by writing to it)
 #define STATUS_FILE "status" // file for status of motor, to know if max offset of direction
 
-#define FORWARD 1
-#define REVERSE 0
+#define FORWARD 3 // 1 in mjsxj02cm
+#define REVERSE 2 // 0 in mjsxj02cm
 #define PAN 0
 #define TILT 1
 
