@@ -168,7 +168,8 @@ void motor_move(motor, direction, steps) {
                 write_motor_status(1);
                 printf("[DEBUG] MAX H! \n");
                 return;
-            }
+            } 
+            write_motor_status(0);
             H_POSITION += steps;
         } else {
             if (H_POSITION - steps < MIN_H) {
@@ -176,6 +177,7 @@ void motor_move(motor, direction, steps) {
                 printf("[DEBUG] MIN H! \n");
                 return;
             }
+            write_motor_status(0);
             H_POSITION -= steps;
         }
         break;
@@ -187,19 +189,20 @@ void motor_move(motor, direction, steps) {
                 printf("[DEBUG] MAX V! \n");
                 return;
             }
+            write_motor_status(0);
             V_POSITION += steps;
         } else {
             if (V_POSITION - steps < MIN_V) {
                 write_motor_status(1);
                 printf("[DEBUG] MIN V! \n");
                 return;
-            }
+            } 
+            write_motor_status(0);
             V_POSITION -= steps;
         break;
         }
     }
     miio_motor_move(motor, direction, steps);
-    write_motor_status(0);
 }
 
 
@@ -217,23 +220,26 @@ void callback_motor() {
     
     int motor, direction, steps = 0;
 
-    
-
-    if (strcmp(argv[0], "pan") == 0) {
-         motor = PAN;
-    } else {
-        motor = TILT;
+    if (strcmp(argv[0], "calibrate") == 0) {
+        motor_calibrate();
     }
+    else {
+        if (strcmp(argv[0], "pan") == 0) {
+            motor = PAN;
+        } else {
+            motor = TILT;
+        }
 
-    if (strcmp(argv[1], "forward") == 0) {
-        direction = FORWARD;
-    } else {
-        direction = REVERSE;
+        if (strcmp(argv[1], "forward") == 0) {
+            direction = FORWARD;
+        } else {
+            direction = REVERSE;
+        }
+        
+        steps = atoi(argv[2]);
+        motor_move(motor, direction, steps);
     }
-    
-    steps = atoi(argv[2]);
     free(argv);
-    motor_move(motor, direction, steps);
 }
 
 void reset_motor() {
@@ -255,6 +261,7 @@ void motor_calibrate() {
     //calibrate vertical axis, down is 0. Move to center afterwards
     miio_motor_move(TILT, FORWARD, MAX_V + abs(MIN_V) + 4);
     miio_motor_move(TILT, REVERSE, CENTER_V);
+    reset_motor();
 }
 
 

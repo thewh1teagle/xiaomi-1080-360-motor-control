@@ -1,0 +1,3 @@
+[submodule "src/onvif_srvd"]
+	path = src/onvif_srvd
+	url = https://github.com/thewh1teagle/onvif_srvd

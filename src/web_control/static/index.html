@@ -121,10 +121,10 @@
 
     <div class="container">
     <div class="div-motor-buttons" style="text-align:center;width:480px; height: 80px;">
-        <button class="buttons-motor" onclick="moveup()">UP</button><br><br>
-        <button class="buttons-motor" onclick="moveleft()">LEFT</button>
-        <button class="buttons-motor" onclick="moveright()">RIGHT</button><br><br>
-        <button class="buttons-motor" onclick="movedown()">DOWN</button>
+        <button class="buttons-motor" id="btn-up" onclick="moveup()">UP</button><br><br>
+        <button class="buttons-motor" id="btn-left" onclick="moveleft()">LEFT</button>
+        <button class="buttons-motor" id="btn-right" onclick="moveright()">RIGHT</button><br><br>
+        <button class="buttons-motor" id="btn-down" onclick="movedown()">DOWN</button>
     </div>
     </div>
 
@@ -159,18 +159,42 @@
             document.getElementById("steps").value = parseInt(document.getElementById("steps").value) + 1
         }
 
-        const moveup = function() {
-            fetch(`/motor_move/tilt/forward/${steps.value}`)
+        const moveup = async function() {
+            var result = await fetch(`/motor_move/tilt/forward/${steps.value}`)
+            if (await result.text() == "overflow") {
+                document.getElementById("btn-up").style.backgroundColor="red";
+                setTimeout(() => {
+                    document.getElementById("btn-up").style.backgroundColor="white";
+                }, 500);
+            }
         }
 
-        const movedown = function() {
-            fetch(`/motor_move/tilt/reverse/${steps.value}`)
+        const movedown = async function() {
+            var result = await fetch(`/motor_move/tilt/reverse/${steps.value}`)
+            if (await result.text() == "overflow") {
+                document.getElementById("btn-down").style.backgroundColor="red";
+                setTimeout(() => {
+                    document.getElementById("btn-down").style.backgroundColor="white";
+                }, 500);
+            }
         }
-        const moveright = function() {
-            fetch(`/motor_move/pan/reverse/${steps.value}`)
+        const moveright = async function() {
+            var result = await fetch(`/motor_move/pan/reverse/${steps.value}`)
+            if (await result.text() == "overflow") {
+                document.getElementById("btn-right").style.backgroundColor="red";
+                setTimeout(() => {
+                    document.getElementById("btn-right").style.backgroundColor="white";
+                }, 500);
+            }
         }
-        const moveleft = function() {
-            fetch(`/motor_move/pan/forward/${steps.value}`)
+        const moveleft = async function() {
+            var result = await fetch(`/motor_move/pan/forward/${steps.value}`)
+            if (await result.text() == "overflow") {
+                document.getElementById("btn-left").style.backgroundColor="red";
+                setTimeout(() => {
+                    document.getElementById("btn-left").style.backgroundColor="white";
+                }, 500);
+            }
         }
    
 
