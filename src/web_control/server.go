@@ -19,6 +19,9 @@ const REVERSE = 0
 const PAN = 1
 const TILT = 0
 
+const BLUE_LED = "/sys/class/gpio/gpio76/value"
+const YELLOW_LED = "/sys/class/gpio/gpio77/value"
+
 var MOTORD_FOLDER = "."
 var EVENT_FILE = "event"
 var PORT = 8090
@@ -112,10 +115,10 @@ func miio_led_control(led int, value int) {
 	var data = []byte(value_string)
 
 	if led == 1 {
-		err := ioutil.WriteFile("/sys/class/gpio/gpio36/value", data, 0644)
+		err := ioutil.WriteFile(YELLOW_LED, data, 0644)
 		check(err)
 	} else {
-		err := ioutil.WriteFile("/sys/class/gpio/gpio78/value", data, 0644)
+		err := ioutil.WriteFile(BLUE_LED, data, 0644)
 		check(err)
 	}
 }
