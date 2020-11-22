@@ -3,3 +3,5 @@ web_control
 event
 *.so
 status
+
+.vscode

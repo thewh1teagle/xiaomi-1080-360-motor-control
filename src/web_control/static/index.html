@@ -1,50 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xiaomi motor control</title>
 
     <style>
-
         /* * {
             border: 1px solid red;
         } */
 
         body {
-            background: #0F2027;  /* fallback for old browsers */
-            background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);  /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to right, #2C5364, #203A43, #0F2027); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            /* fallback for old browsers */
+            background: #0F2027;
+            /* Chrome 10-25, Safari 5.1-6 */
+            background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);
+            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            background: linear-gradient(to right, #2C5364, #203A43, #0F2027);
 
         }
 
-        span {cursor:pointer; }
+        span {
+            cursor: pointer;
+        }
 
-		.number{
-			margin:100px;
+        .number {
+            margin: 100px;
             display: block;
             position: static;
-		}
-		.minus, .plus{
-			width:20px;
-			height:20px;
-			background:#f2f2f2;
-			border-radius:4px;
-			padding:8px 5px 8px 5px;
-			border:1px solid #ddd;
+        }
+
+        .minus,
+        .plus {
+            width: 20px;
+            height: 20px;
+            background: #f2f2f2;
+            border-radius: 4px;
+            padding: 8px 5px 8px 5px;
+            border: 1px solid #ddd;
             display: inline-block;
             vertical-align: middle;
             text-align: center;
-		}
-		input{
-			height:40px;
+        }
+
+        input {
+            height: 40px;
             width: 100px;
             text-align: center;
             font-size: 26px;
-			border:1px solid #ddd;
-			border-radius:4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             display: inline-block;
             vertical-align: middle;
+        }
+
+        label {
+            color: white;
         }
 
 
@@ -54,26 +66,26 @@
             width: 40%;
             height: 100%;
             margin: 5px;
-            cursor:pointer;
+            cursor: pointer;
             border: 20px solid white;
             border-radius: 15px;
         }
 
-        
+
 
         .div-led {
             position: relative;
             display: block;
         }
 
-     
+
 
         .container {
             display: flex;
             justify-content: center;
             align-items: center;
         }
-    
+
         .container-number {
             display: flex;
             justify-content: center;
@@ -96,119 +108,121 @@
             border: 10px solid white;
             border-radius: 2px;
         }
-
     </style>
 
 </head>
+
 <body>
 
 
     <div class="header">
         <h1 style="color: white;">
-            Mijia motor control
+            Xiaomi motor control
         </h1>
     </div>
 
 
     <div class="container-number">
-    <div class="number">
-        <h1 style="color: white; display: flex; justify-content: center;">Steps</h1>
-        <span onclick="span_minus();" class="minus">-</span>
-        <input id="steps" type="text" value="5"/>
-        <span onclick="span_plus();" class="plus">+</span>
-    </div>
+        <div class="number">
+            <h1 style="color: white; display: flex; justify-content: center;">Steps</h1>
+            <span onclick="span_minus();" class="minus">-</span>
+            <input id="steps" type="text" value="5" />
+            <span onclick="span_plus();" class="plus">+</span>
+        </div>
     </div>
 
     <div class="container">
-    <div class="div-motor-buttons" style="text-align:center;width:480px; height: 80px;">
-        <button class="buttons-motor" id="btn-up" onclick="moveup()">UP</button><br><br>
-        <button class="buttons-motor" id="btn-left" onclick="moveleft()">LEFT</button>
-        <button class="buttons-motor" id="btn-right" onclick="moveright()">RIGHT</button><br><br>
-        <button class="buttons-motor" id="btn-down" onclick="movedown()">DOWN</button>
+        <div class="div-motor-buttons" style="text-align:center;width:480px; height: 80px;">
+            <button class="buttons-motor" id="btn-up" onclick="moveup()">UP</button><br><br>
+            <button class="buttons-motor" id="btn-left" onclick="moveleft()">LEFT</button>
+            <button class="buttons-motor" id="btn-right" onclick="moveright()">RIGHT</button><br><br>
+            <button class="buttons-motor" id="btn-down" onclick="movedown()">DOWN</button>
+        </div>
     </div>
-    </div>
-
-
-      
-
-      
 
     <div class="container-led">
-      <div class="div-led">
-        
-        <label for="cars"><h4 style="color: white;">new!</h4><h1 style="color: white;">led control</h1></label>
+        <div class="div-led">
 
-        <select  name="color" id="color">
-            <option value="">Color</option>
-            <option value="blue">Blue</option>
-            <option value="yellow">Yellow</option>
-        </select> 
-        <button onclick="led_on();">On</button>
-        <button onclick="led_off();">Off</button>
-      </div>
+            <label for="cars">
+                <h4 style="color: white;">new!</h4>
+                <h1 style="color: white;">led control</h1>
+            </label>
+
+            <label>
+                <input type="checkbox" onclick='handleLED(this);' id="blue_led" name="blue_led" value="blue">
+                <span></span>
+                Blue
+            </label><br>
+
+            <label>
+                <input type="checkbox" onclick='handleLED(this);' id="yellow_led" name="yellow_led" value="yellow">
+                <span></span>
+                Yellow
+            </label><br>
+
+        </div>
     </div>
     <script>
 
         var steps = document.getElementById("steps")
 
-        const span_minus = function() {
+        const span_minus = function () {
             document.getElementById("steps").value = parseInt(document.getElementById("steps").value) - 1
         }
-        
-        const span_plus = function() {
+
+        const span_plus = function () {
             document.getElementById("steps").value = parseInt(document.getElementById("steps").value) + 1
         }
 
-        const moveup = async function() {
+        const moveup = async function () {
             var result = await fetch(`/motor_move/tilt/forward/${steps.value}`)
             if (await result.text() == "overflow") {
-                document.getElementById("btn-up").style.backgroundColor="red";
+                document.getElementById("btn-up").style.backgroundColor = "red";
                 setTimeout(() => {
-                    document.getElementById("btn-up").style.backgroundColor="white";
+                    document.getElementById("btn-up").style.backgroundColor = "white";
                 }, 500);
             }
         }
 
-        const movedown = async function() {
+        const movedown = async function () {
             var result = await fetch(`/motor_move/tilt/reverse/${steps.value}`)
             if (await result.text() == "overflow") {
-                document.getElementById("btn-down").style.backgroundColor="red";
+                document.getElementById("btn-down").style.backgroundColor = "red";
                 setTimeout(() => {
-                    document.getElementById("btn-down").style.backgroundColor="white";
+                    document.getElementById("btn-down").style.backgroundColor = "white";
                 }, 500);
             }
         }
-        const moveright = async function() {
+        const moveright = async function () {
             var result = await fetch(`/motor_move/pan/reverse/${steps.value}`)
             if (await result.text() == "overflow") {
-                document.getElementById("btn-right").style.backgroundColor="red";
+                document.getElementById("btn-right").style.backgroundColor = "red";
                 setTimeout(() => {
-                    document.getElementById("btn-right").style.backgroundColor="white";
+                    document.getElementById("btn-right").style.backgroundColor = "white";
                 }, 500);
             }
         }
-        const moveleft = async function() {
+        const moveleft = async function () {
             var result = await fetch(`/motor_move/pan/forward/${steps.value}`)
             if (await result.text() == "overflow") {
-                document.getElementById("btn-left").style.backgroundColor="red";
+                document.getElementById("btn-left").style.backgroundColor = "red";
                 setTimeout(() => {
-                    document.getElementById("btn-left").style.backgroundColor="white";
+                    document.getElementById("btn-left").style.backgroundColor = "white";
                 }, 500);
             }
         }
-   
 
-
-        const led_on = function() {
-            fetch(`/led_control/${document.getElementById("color").value}/on`)
+        const handleLED = function (led) {
+            let state = '';
+            if (led.checked) {
+                state = 'on'
+            } else {
+                state = 'off'
+            }
+            fetch(`/led_control/${led.value}/${state}`)
         }
 
-        const led_off = function() {
-            fetch(`led_control/${document.getElementById("color").value}/off`)
-        }
-
-
-        document.onkeydown = function(e) {
+        document.onkeydown = function (e) {
             switch (e.keyCode) {
                 case 37:
                     // left
@@ -229,13 +243,14 @@
             }
         };
 
-        window.addEventListener("keydown", function(e) {
+        window.addEventListener("keydown", function (e) {
             // space and arrow keys
-            if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+            if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
                 e.preventDefault();
             }
         }, false);
 
     </script>
 </body>
+
 </html>
