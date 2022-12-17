@@ -26,8 +26,9 @@ https://github.com/telmomarques/xiaomi-360-1080p-hacks
 
 3. Power off the camera and insert the SD Card
 4. Power on the camera
-5. Open the web interface on the camrea on your browser
-http:8080//<your-camera-ip/
+5. the onvif url are : http://<your-camera-ip>:5000/onvif/device_service
+ 
+You can check it with onvif deveice manager: https://sourceforge.net/projects/onvifdm/
 
 ## How to build
 
